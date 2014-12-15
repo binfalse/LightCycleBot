@@ -73,13 +73,33 @@ public class Utils
 	/**
 	 * Is a move allowed?
 	 *
-	 * @param p the player
+	 * @param pDir the player's direction
 	 * @param direction the target direction
 	 * @return true, if player can move towards direction
 	 */
-	public static final boolean allowedMove (Player p, int direction)
+	public static final boolean allowedMove (int pDir, int direction)
 	{
-		return abs (direction - p.getDirection ()) <= 1;
+		return abs (direction - pDir) <= 1;
+	}
+	
+	
+	/**
+	 * Gets the direction. Standing at <code>from</code>, which direction do we need to go to arrive at <code>to</code>?
+	 *
+	 * @param from the start position
+	 * @param to the target position (expected to be adjacent to from)
+	 * @return the direction
+	 */
+	public static final int getDirection (int from, int to)
+	{
+		if (from + 1 == to)
+			return Direction.WEST;
+		else if (from - 1 == to)
+			return Direction.EAST;
+		else if (from < to)
+			return Direction.SOUTH;
+		else
+			return Direction.NORTH;
 	}
 	
 	/**
@@ -91,17 +111,7 @@ public class Utils
 	 */
 	public static final String translateMove (Player p, int target)
 	{
-		int pPos = p.getPosition();
-		int targetDir;
-		
-		if (pPos + 1 == target)
-			targetDir = Direction.WEST;
-		else if (pPos - 1 == target)
-			targetDir = Direction.EAST;
-		else if (pPos < target)
-			targetDir = Direction.SOUTH;
-		else
-			targetDir = Direction.NORTH;
+		int targetDir = getDirection (p.getPosition(), target);
 
 		int looking = p.getDirection();
 		

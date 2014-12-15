@@ -95,10 +95,6 @@ public class GameMap
 		compartmentMapper = new HashMap<Integer, List<Integer>> ();
 		for (int i = 0; i < map.length; i++)
 		{
-			/*
-			 * if (compartments[i] == Integer.MAX_VALUE)
-			 * continue;
-			 */
 			Integer cur = compartments[i];
 			Integer target = mapper.get (cur);
 			while (target != null && !cur.equals (target))
@@ -340,21 +336,6 @@ public class GameMap
 		List<VirtualCompartment> cur = new ArrayList<VirtualCompartment> ();
 		bestScore = 0;
 		chooseBestCompartmentPath (compartments.get (0), cur, 0);
-		/*
-		 * int bestNum = 0;
-		 * int curNum = 0;
-		 * 
-		 * int curVc = 0;
-		 * while (true)
-		 * {
-		 * VirtualCompartment vc = compartments.get(curVc);
-		 * cur.add(vc);
-		 * curNum += vc.nodes.size();
-		 * 
-		 * curVc =
-		 * }
-		 */
-		// turn best;
 	}
 	
 	
@@ -466,24 +447,6 @@ public class GameMap
 		List<Integer> walkPath = new ArrayList<Integer> ();
 		boolean[] visited = new boolean[flood.length];
 		walkPath.addAll (shortestPath (flood, visited, start, end));
-		/*
-		 * walkPath.add(end);
-		 * int insertAt = walkPath.size() - 1;
-		 * //walkPath.add(end);
-		 * int cur = end;
-		 * visited[end] = true;
-		 * while (cur != start)
-		 * {
-		 * List<Integer> neighbors = getAdjacentAvailable (cur);
-		 * for (int i : neighbors)
-		 * if (flood[i] < flood[cur])
-		 * {
-		 * cur = i;
-		 * walkPath.add(insertAt, i);
-		 * visited[i] = true;
-		 * }
-		 * }
-		 */
 		
 		LOGGER.debug ("shortest path: ", walkPath);
 		
@@ -535,7 +498,7 @@ public class GameMap
 	
 	
 	public List<Integer> shortestPath (int[] floodFromStart, boolean[] visited,
-		int start, int end)
+		int start, int end, int dir)
 	{
 		List<Integer> walkPath = new ArrayList<Integer> ();
 		
@@ -552,13 +515,11 @@ public class GameMap
 				{
 					cur = i;
 					visited[i] = true;
-					/*
-					 * if (i == start)
-					 * break;
-					 */
 					walkPath.add (insertAt, i);
 				}
 		}
+		
+		
 		
 		return walkPath;
 	}
