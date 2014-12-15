@@ -386,7 +386,7 @@ public class TestMap
 		GameMap gm = new GameMap (map);
 	
 	  	Player p = new Player (1);
-			String [] line = "POS 1 2,5 W".split (" ");
+			String [] line = "POS 1 2,5 N".split (" ");
 			p.update (gm, line[2], line[3]);
 			
 		int [] flood = gm.floodFill (p.getPosition(), p.getDirection ());
@@ -409,7 +409,7 @@ public class TestMap
 		
 		LOGGER.debug (bestVCPath.get(0).input + " -> " +  bestVCPath.get(1).input);
 		
-		walkPath = gm.findGoodPath(flood, bestVCPath.get(0), bestVCPath.get(1).input);
+		walkPath = gm.findGoodPath(flood, bestVCPath.get(0), bestVCPath.get(1).input, p.getDirection ());
 		if (LOGGER.isDebugEnabled ())
 		{
 			LOGGER.debug (walkPath);
@@ -423,12 +423,12 @@ public class TestMap
 			Utils.printMap (walking, gm.getWidth());
 			LOGGER.debug(walkPath);
 		}
+		LOGGER.setMinLevel (LOGGER.WARN);
 		
 		assertEquals ("walk path not optimal", 19, walkPath.size ());
 		assertEquals ("walk starts at bad position", 41, (int) walkPath.get (0));
 		assertEquals ("walk arrives at bad position", 25, (int) walkPath.get (walkPath.size () - 1));
 
-		LOGGER.setMinLevel (LOGGER.WARN);
 		//gm.findGoodPath(new ArrayList<Integer> (), flood, bestVCPath.get(0), bestVCPath.get(0).outputs.keySet().iterator().next());
 	}
 	
@@ -473,7 +473,7 @@ public class TestMap
 		
 		//System.out.println (bestVCPath.get(0).input + " -> " +  bestVCPath.get(1).input);
 		
-		walkPath = gm.findGoodPath(flood, bestVCPath.get(0), 9);
+		walkPath = gm.findGoodPath(flood, bestVCPath.get(0), 9, p.getDirection ());
 		//System.out.println(walkPath);
 		
 		
@@ -489,7 +489,7 @@ public class TestMap
 		}
 		
 		
-		assertEquals ("walk path not optimal", 71, walkPath.size ());
+		assertEquals ("walk path not optimal", 70, walkPath.size ());
 		assertEquals ("walk starts at bad position", 0, (int) walkPath.get (0));
 		assertEquals ("walk arrives at bad position", 9, (int) walkPath.get (walkPath.size () - 1));
 		

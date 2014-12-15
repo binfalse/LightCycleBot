@@ -27,6 +27,9 @@ public class GameMap
 	private int[]												compartments;
 	private Map<Integer, List<Integer>>	compartmentMapper;
 	
+	private List<VirtualCompartment>	bestCompartmentList;
+	private int												bestScore;
+	
 	
 	/* private int[] voronoi; */
 	
@@ -344,9 +347,6 @@ public class GameMap
 		return bestCompartmentList;
 	}
 	
-	private List<VirtualCompartment>	bestCompartmentList;
-	private int												bestScore;
-	
 	
 	public void chooseBestCompartmentPath (VirtualCompartment vc,
 		List<VirtualCompartment> cur, int curScore)
@@ -411,7 +411,7 @@ public class GameMap
 					flood,
 					bestCompartmentList.get (i),
 					i < bestCompartmentList.size () - 1 ? bestCompartmentList.get (i + 1).input
-						: -1));
+						: -1, p.getDirection ()));
 			// System.out.println("post: " + walkPath);
 		}
 		
@@ -421,15 +421,20 @@ public class GameMap
 		// take shortest path from start to end
 		// and extend this path
 		
+		return dropDouble (walkPath);
+	}
+	
+	public List<Integer> dropDouble (List<Integer> list)
+	{
 		List<Integer> toGo = new ArrayList<Integer> ();
-		for (int i : walkPath)
+		for (int i : list)
 			if (toGo.isEmpty () || !toGo.get (toGo.size () - 1).equals (i))
 				toGo.add (i);
 		return toGo;
 	}
 	
 	
-	public List<Integer> findGoodPath (int[] flood, VirtualCompartment vc, int end)
+	public List<Integer> findGoodPath (int[] flood, VirtualCompartment vc, int end, int dir)
 	{
 		int start = vc.input;
 		if (end < 0)
@@ -450,7 +455,7 @@ public class GameMap
 		
 		LOGGER.debug ("shortest path: ", walkPath);
 		
-		extendPath (walkPath, visited, vc);
+		extendPath (walkPath, visited, vc, dir);
 		
 		if ( ((double) (walkPath.size ())) / (double) vc.nodes.size () < .8)
 		{
@@ -466,9 +471,11 @@ public class GameMap
 				{
 					sum += i;
 					num++;
+					LOGGER.debug ("unvisited: ", i);
 				}
 			
 			sum = sum / num;
+			LOGGER.debug ("weight point: ", sum);
 			while (sum < 1 || visited[sum] || !vc.nodes.contains (sum))
 			{
 				sum++;
@@ -478,25 +485,43 @@ public class GameMap
 			}
 			
 			// sum is our waypoint
+			LOGGER.debug ("found waypoint: ", sum);
 			
 			List<Integer> walkPath2 = new ArrayList<Integer> ();
 			visited = new boolean[flood.length];
 			// shortest path start-sum
 			walkPath2.addAll (shortestPath (flood, visited, start, sum));
 			
+			int [] tmp = compartments;
+			compartments = new int [tmp.length];
+			for (int i = 0; i < tmp.length; i++)
+				compartments[i] = tmp[i];
+			for (int i : walkPath2)
+				if (i != sum) compartments[i] = Integer.MAX_VALUE;
+			Utils.printMap(compartments, width);
+			
 			// shortest path sum-end
 			// TODO: is that direction correct?
 			int[] flood2 = floodFill (sum, null);
+			compartments = tmp;
+			LOGGER.debug ("first part of shortest path: ", walkPath2);
+			Utils.printMap(flood2, width);
+			Utils.printMap(compartments, width);
+			visited[sum] = false;
+			//if (walkPath2 != null)
+				//System.exit(1);
 			//int[] flood2 = floodFill (sum, Utils.getDirection (walkPath2.get (walkPath2.size () - 2), walkPath2.get (walkPath2.size () - 1)));
 			walkPath2.addAll (shortestPath (flood2, visited, sum, end));
+
+			LOGGER.debug ("new shortest path: ", walkPath2);
 			
-			extendPath (walkPath2, visited, vc);
+			extendPath (walkPath2, visited, vc, dir);
 			if (walkPath.size () < walkPath2.size ())
 				walkPath = walkPath2;
 		}
-		
-		return walkPath;
-	}
+
+		return dropDouble (walkPath);
+		}
 	
 	
 	public List<Integer> shortestPath (int[] floodFromStart, boolean[] visited,
@@ -515,7 +540,7 @@ public class GameMap
 			for (int i : neighbors)
 			{
 				LOGGER.debug ("looking from ", cur, " at neighbor: ", i);
-				if (floodFromStart[i] < floodFromStart[cur])
+				if (!visited[i] && floodFromStart[i] < floodFromStart[cur])
 				{
 					LOGGER.debug ("neighbor ", i, " accepted");
 					cur = i;
@@ -531,7 +556,7 @@ public class GameMap
 	
 	
 	public void extendPath (List<Integer> walkPath, boolean[] visited,
-		VirtualCompartment vc)
+		VirtualCompartment vc, int dir)
 	{
 		
 		// ok, now we have the shortest path ;-)
@@ -570,20 +595,20 @@ public class GameMap
 				if (p1 + 1 == p2 || p1 - 1 == p2)
 				{
 					// p1 left or right of p2
-					if (tryExtend (walkPath, c, visited, p1, p2, p1 - width, p2 - width))
+					if ((c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 - width))) && tryExtend (walkPath, c, visited, p1, p2, p1 - width, p2 - width))
 						// extended above
 						didsmth = true;
-					if (tryExtend (walkPath, c, visited, p1, p2, p1 + width, p2 + width))
+					if ((c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 + width))) && tryExtend (walkPath, c, visited, p1, p2, p1 + width, p2 + width))
 						// extended below
 						didsmth = true;
 				}
 				else
 				{
 					// p1 above or below p2
-					if (tryExtend (walkPath, c, visited, p1, p2, p1 - 1, p2 - 1))
+					if ((c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 - 1))) && tryExtend (walkPath, c, visited, p1, p2, p1 - 1, p2 - 1))
 						// extended left
 						didsmth = true;
-					if (tryExtend (walkPath, c, visited, p1, p2, p1 + 1, p2 + 1))
+					if ((c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 + 1))) && tryExtend (walkPath, c, visited, p1, p2, p1 + 1, p2 + 1))
 						// extended right
 						didsmth = true;
 				}

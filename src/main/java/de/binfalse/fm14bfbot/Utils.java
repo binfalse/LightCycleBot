@@ -140,7 +140,10 @@ public class Utils
 		if (!LOGGER.isDebugEnabled ())
 			return;
 		StringBuffer sb = new StringBuffer ();
-		
+		sb.append ("\t");
+		for (int i = 0; i < width; i++)
+			sb.append ("#").append (i).append ("#\t");
+		sb.append ("\n#0#\t");
 		for (int i = 0; i < m.length; i++)
 		{
 			if (m[i] == Integer.MAX_VALUE)
@@ -148,7 +151,7 @@ public class Utils
 			else
 				sb.append (m[i]).append ("\t");
 			if ( (i + 1) % width == 0)
-				sb.append ("\n");
+				sb.append ("\n#").append ((i+1) / width).append ("#\t");
 		}
 		LOGGER.debug ("\n" + sb.toString ());
 	}
