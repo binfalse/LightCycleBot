@@ -3,6 +3,8 @@
  */
 package de.binfalse.fm14bfbot;
 
+import de.binfalse.bflog.LOGGER;
+
 
 /**
  * @author Martin Scharm
@@ -93,9 +95,9 @@ public class Utils
 	public static final int getDirection (int from, int to)
 	{
 		if (from + 1 == to)
-			return Direction.WEST;
-		else if (from - 1 == to)
 			return Direction.EAST;
+		else if (from - 1 == to)
+			return Direction.WEST;
 		else if (from < to)
 			return Direction.SOUTH;
 		else
@@ -121,5 +123,33 @@ public class Utils
 		if ((4 + targetDir - looking) % 4 == 1)
 			return "RIGHT";
 		return "LEFT";
+	}
+	
+	
+	
+	/**
+	 * Prints a map, for debugging.
+	 * 
+	 * @param m
+	 *          the map
+	 * @param width
+	 *          the width
+	 */
+	public static void printMap (int[] m, int width)
+	{
+		if (!LOGGER.isDebugEnabled ())
+			return;
+		StringBuffer sb = new StringBuffer ();
+		
+		for (int i = 0; i < m.length; i++)
+		{
+			if (m[i] == Integer.MAX_VALUE)
+				sb.append ("#\t");
+			else
+				sb.append (m[i]).append ("\t");
+			if ( (i + 1) % width == 0)
+				sb.append ("\n");
+		}
+		LOGGER.debug ("\n" + sb.toString ());
 	}
 }

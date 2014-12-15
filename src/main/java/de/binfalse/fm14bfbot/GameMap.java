@@ -216,12 +216,12 @@ public class GameMap
 		// and count the number of fields we would get
 		
 		// my flood:
-		int[] flood = floodFill (me.getPosition ());
+		int[] flood = floodFill (me.getPosition (), me.getDirection ());
 		
 		// their floods
 		List<int[]> floods = new ArrayList<int[]> ();
 		for (Player enemy : enemies)
-			floods.add (floodFill (enemy.getPosition ()));
+			floods.add (floodFill (enemy.getPosition (), enemy.getDirection ()));
 		
 		// voronoi
 		int[] voronoi = new int[flood.length];
@@ -247,7 +247,7 @@ public class GameMap
 	}
 	
 	
-	private List<Integer> getAvailableMoves (GameMap map, Player p)
+	/*private List<Integer> getAvailableMoves (GameMap map, Player p)
 	{
 		List<Integer> moves = getAdjacentAvailable (p.getPosition ());
 		int i = 0;
@@ -255,7 +255,7 @@ public class GameMap
 			if (moves.get (i))
 				
 				return moves;
-	}
+	}*/
 	
 	
 	public List<VirtualCompartment> getVirtualCompartments (int start,
@@ -380,7 +380,7 @@ public class GameMap
 	{
 		// List<Integer> toGo = new ArrayList<Integer> ();
 		
-		int[] flood = floodFill (p.getPosition ());
+		int[] flood = floodFill (p.getPosition (), p.getDirection ());
 		
 		List<Integer> articulationPoints = getArticulationPoints (getCompartmentNumber (p
 			.getPosition ()));
@@ -485,7 +485,9 @@ public class GameMap
 			walkPath2.addAll (shortestPath (flood, visited, start, sum));
 			
 			// shortest path sum-end
-			int[] flood2 = floodFill (sum);
+			// TODO: is that direction correct?
+			int[] flood2 = floodFill (sum, null);
+			//int[] flood2 = floodFill (sum, Utils.getDirection (walkPath2.get (walkPath2.size () - 2), walkPath2.get (walkPath2.size () - 1)));
 			walkPath2.addAll (shortestPath (flood2, visited, sum, end));
 			
 			extendPath (walkPath2, visited, vc);
@@ -498,7 +500,7 @@ public class GameMap
 	
 	
 	public List<Integer> shortestPath (int[] floodFromStart, boolean[] visited,
-		int start, int end, int dir)
+		int start, int end)
 	{
 		List<Integer> walkPath = new ArrayList<Integer> ();
 		
@@ -511,15 +513,18 @@ public class GameMap
 		{
 			List<Integer> neighbors = getAdjacentAvailable (cur);
 			for (int i : neighbors)
+			{
+				LOGGER.debug ("looking from ", cur, " at neighbor: ", i);
 				if (floodFromStart[i] < floodFromStart[cur])
 				{
+					LOGGER.debug ("neighbor ", i, " accepted");
 					cur = i;
 					visited[i] = true;
 					walkPath.add (insertAt, i);
+					break;
 				}
+			}
 		}
-		
-		
 		
 		return walkPath;
 	}
@@ -639,7 +644,7 @@ public class GameMap
 	}
 	
 	
-	public int[] floodFill (int idx)
+	public int[] floodFill (int idx, Integer dir)
 	{
 		int[] reached = new int[map.length];
 		List<Integer> todo = new ArrayList<Integer> ();
@@ -653,7 +658,8 @@ public class GameMap
 			int next = todo.remove (0);
 			int r = reached[next];
 			
-			for (int n : getAdjacentAvailable (next))
+			List<Integer> adj = next == idx && dir != null ? getAdjacentAvailable (next, dir) : getAdjacentAvailable (next);
+			for (int n : adj)
 				if (reached[n] == Integer.MAX_VALUE)
 				{
 					reached[n] = r + 1;
@@ -725,6 +731,24 @@ public class GameMap
 	}
 	
 	
+
+	public List<Integer> getAdjacentAvailable (int idx, int dir)
+	{
+		List<Integer> all = getAdjacentAvailable (idx);
+		List<Integer> allowed = new ArrayList<Integer> ();
+		for (int i : all)
+		{
+			if (Utils.allowedMove (Utils.getDirection (idx, i), dir))
+			{
+				LOGGER.debug (i, " is allowed adj");
+				allowed.add (i);
+			}
+			else
+				LOGGER.debug (i, " is forbidden adj: stand ", idx, " stand dir ", dir, " to ", i);
+		}
+		return allowed;
+	}
+	
 	public List<Integer> getAdjacentAvailable (int idx)
 	{
 		List<Integer> adj = new ArrayList<Integer> ();
@@ -741,6 +765,8 @@ public class GameMap
 		// bottom
 		if (idx + width < compartments.length && compartments[idx + width] == comp)
 			adj.add (idx + width);
+
+		LOGGER.debug ("adjacents of ", idx, " are ", adj);
 		return adj;
 	}
 	

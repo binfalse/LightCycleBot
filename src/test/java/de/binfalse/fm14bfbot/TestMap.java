@@ -130,7 +130,7 @@ public class TestMap
 	@Test
 	public void voronoiTest ()
 	{
-		LOGGER.setMinLevel (LOGGER.DEBUG);
+		//LOGGER.setMinLevel (LOGGER.DEBUG);
 	  	List<String> map = new ArrayList<String> ();
 	  	map.add ("#.....#...");
 	  	map.add ("......#.##");
@@ -163,9 +163,25 @@ public class TestMap
 		
 		if (LOGGER.isDebugEnabled ())
 		{
-			
-			printMap (voronoi, gm.getWidth());
+			Utils.printMap (voronoi, gm.getWidth());
 		}
+		
+		int [] counter = new int [3];
+		int sum = 0;
+		for (int i = 0; i < voronoi.length; i++)
+			if (voronoi[i] < Integer.MAX_VALUE)
+			{
+				counter[voronoi[i] - 1]++;
+			}
+			else
+				sum++;
+		assertEquals ("unexpected tessilation", 24, counter[0]);
+		assertEquals ("unexpected tessilation", 27, counter[1]);
+		assertEquals ("unexpected tessilation", 25, counter[2]);
+		
+		for (int i = 0; i < counter.length; i++)
+			sum += counter[i];
+		assertEquals ("tessilation failed. map size?", voronoi.length, sum);
 
 		LOGGER.setMinLevel (LOGGER.WARN);
 	}
@@ -173,6 +189,7 @@ public class TestMap
 	@Test
 	public void floodfillTest ()
 	{
+		//LOGGER.setMinLevel (LOGGER.DEBUG);
   	List<String> map = new ArrayList<String> ();
   	map.add ("#.....#...");
   	map.add ("......#.##");
@@ -189,11 +206,14 @@ public class TestMap
 		String [] line = "POS 1 2,5 EAST".split (" ");
 		p.update (gm, line[2], line[3]);
   	
-		int [] m = gm.floodFill (p.getPosition ());
+		int [] m = gm.floodFill (p.getPosition (), p.getDirection ());
 		int max = 0;
 		for (int i = 0; i < m.length; i++)
 			if (max < m[i] && m[i] != Integer.MAX_VALUE)
 				max = m[i];
+		
+		Utils.printMap (m, gm.getWidth ());
+		
 		assertEquals ("floodfill seems to be incorrect", 17, max);
 		
 		
@@ -210,7 +230,7 @@ public class TestMap
   	map.add ("......#...");
   	
   	gm = new GameMap (map);
-  	m = gm.floodFill (p.getPosition ());
+  	m = gm.floodFill (p.getPosition (), p.getDirection ());
 		max = 0;
 		for (int i = 0; i < m.length; i++)
 			if (max < m[i] && m[i] != Integer.MAX_VALUE)
@@ -219,7 +239,7 @@ public class TestMap
   	
 
   	int [] m2 = m;
-  	m = gm.floodFill (9);
+  	m = gm.floodFill (9, null);
 		for (int i = 0; i < m.length; i++)
 			if (max < m[i] && m[i] != Integer.MAX_VALUE)
 				max = m[i];
@@ -242,7 +262,8 @@ public class TestMap
 				sb.append ("\n");
 		}
 		System.out.println (sb.toString ());*/
-		
+
+		LOGGER.setMinLevel (LOGGER.WARN);
 	}
 	
 	
@@ -316,9 +337,9 @@ public class TestMap
 		{
 			LOGGER.debug(path);
 			
-			int [] flood = gm.floodFill (p.getPosition());
+			int [] flood = gm.floodFill (p.getPosition(), p.getDirection ());
 
-			printMap (flood, gm.getWidth());
+			Utils.printMap (flood, gm.getWidth());
 		
 			int [] walking = new int [flood.length];
 			//Arrays.fill (walking, Integer.MAX_VALUE);
@@ -337,7 +358,7 @@ public class TestMap
 				if (flood[i] == Integer.MAX_VALUE)
 					walking[i] = -1;
 			
-			printMap (walking, gm.getWidth());
+			Utils.printMap (walking, gm.getWidth());
 		}
 		LOGGER.setMinLevel (LOGGER.WARN);
 		
@@ -368,7 +389,7 @@ public class TestMap
 			String [] line = "POS 1 2,5 W".split (" ");
 			p.update (gm, line[2], line[3]);
 			
-		int [] flood = gm.floodFill (p.getPosition());
+		int [] flood = gm.floodFill (p.getPosition(), p.getDirection ());
 		
 		List<Integer> articulationPoints = gm.getArticulationPoints (gm.getCompartmentNumber (p.getPosition()));
 		
@@ -399,7 +420,7 @@ public class TestMap
 			for (int i : walkPath)
 				walking[i] = ++n;
 			
-			printMap (walking, gm.getWidth());
+			Utils.printMap (walking, gm.getWidth());
 			LOGGER.debug(walkPath);
 		}
 		
@@ -432,7 +453,7 @@ public class TestMap
 			String [] line = "POS 1 1,1 W".split (" ");
 			p.update (gm, line[2], line[3]);
 			
-		int [] flood = gm.floodFill (p.getPosition());
+		int [] flood = gm.floodFill (p.getPosition(), p.getDirection ());
 		
 		List<Integer> articulationPoints = gm.getArticulationPoints (gm.getCompartmentNumber (p.getPosition()));
 		
@@ -464,7 +485,7 @@ public class TestMap
 			for (int i : walkPath)
 				walking[i] = ++n;
 			
-			printMap (walking, gm.getWidth());
+			Utils.printMap (walking, gm.getWidth());
 		}
 		
 		
@@ -475,23 +496,7 @@ public class TestMap
 		//gm.findGoodPath(new ArrayList<Integer> (), flood, bestVCPath.get(0), bestVCPath.get(0).outputs.keySet().iterator().next());
 	}
 
-public static void printMap (int [] m, int width)
-{
-	if (!LOGGER.isDebugEnabled ())
-		return;
-StringBuffer sb = new StringBuffer ();
 
-for (int i = 0; i < m.length; i++)
-{
-	if (m[i] == Integer.MAX_VALUE)
-		sb.append ("#\t");
-	else
-		sb.append (m[i]).append ("\t");
-	if ((i + 1) % width == 0)
-		sb.append ("\n");
-}
-LOGGER.debug ("\n" + sb.toString ());
-}
 	@Test
 	public void compartmentsTest ()
 	{
@@ -526,7 +531,7 @@ LOGGER.debug ("\n" + sb.toString ());
   	assertTrue ("points should be same compartment", gm.sameCompartment (gm.getIdx (6, 0), gm.getIdx (8, 5)));
   	assertFalse ("points shouldn't be same compartment", gm.sameCompartment (gm.getIdx (8, 5), gm.getIdx (8, 7)));
   	
-  	LOGGER.setMinLevel (LOGGER.DEBUG);
+  	//LOGGER.setMinLevel (LOGGER.DEBUG);
 
   	assertEquals ("unexpected number of articulation points in compartment ", 0, gm.getArticulationPoints (1).size ());
   	assertEquals ("unexpected number of articulation points in compartment ", 5, gm.getArticulationPoints (2).size ());
