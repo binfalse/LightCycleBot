@@ -106,7 +106,8 @@ public class TestSurvive
 			String [] line = "POS 1 1,5 W".split (" ");
 			p.update (gm, line[2], line[3]);
 		
-		List<Integer> path = gm.optimalFill(p);
+		gm.setMe(p);
+		List<Integer> path = gm.optimalFill();
 		
 		
 		if (LOGGER.isDebugEnabled ())

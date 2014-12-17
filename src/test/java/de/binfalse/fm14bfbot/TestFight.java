@@ -52,8 +52,8 @@ public class TestFight
 		line = "POS 1 9,8 EAST".split (" ");
 		p.update (gm, line[2], line[3]);
 		
-		
-		gm.fight (enemies, p);
+		gm.setMe(p);
+		gm.fight (enemies);
 	}
 
 	
