@@ -55,10 +55,12 @@ public class LightCycleBot
     		{
     			for (Player p : players.values ())
     				LOGGER.debug ("player: ", p.getId (), p == me ? " (me)" : "", " -- ", p.getPosition (), " -- ", p.getDirection ());
-    			LOGGER.debug ("\n", Utils.printMap (map.getCompartmentMap (), map.getWidth (), new StringBuffer (), players.values ()));
+    			
     			// do something
     			
     			map.updatePlayers (players);
+    			
+    			LOGGER.debug ("\n", Utils.printMap (map.getCompartmentMap (), map.getWidth (), new StringBuffer (), players.values ()));
     			
     			// is this fight or endgame?
     			List<Player> enemies = new ArrayList<Player> ();
@@ -95,7 +97,7 @@ public class LightCycleBot
     	LOGGER.debug ("need to fight");
     	if (LOGGER.isDebugEnabled ())
     		LOGGER.debug (Arrays.toString (map.getMap ()), enemies);
-    	sayServer (map.fight (enemies, me));
+    	sayServer (map.fight (enemies));
     }
     
     private void survive ()
@@ -105,7 +107,7 @@ public class LightCycleBot
     	LOGGER.debug ("need to survive");
     	if (path == null)
     	{
-    		path = map.optimalFill(me);
+    		path = map.optimalFill();
     		LOGGER.debug("found optimal path: ", path);
     		pathPosition = 1;
     	}
@@ -174,6 +176,7 @@ public class LightCycleBot
     		{
     			String myNumber = line.substring (4);
     			me = new Player (Integer.parseInt (myNumber));
+    			map.setMe(me);
     			players.put (myNumber, me);
     			break;
     		}

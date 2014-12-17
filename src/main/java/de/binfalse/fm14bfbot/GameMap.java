@@ -29,6 +29,7 @@ public class GameMap
 	
 	private List<VirtualCompartment>	bestCompartmentList;
 	private int												bestScore;
+	private Player me;
 	
 	
 	/* private int[] voronoi; */
@@ -47,6 +48,11 @@ public class GameMap
 			}
 		}
 		updateCompartments ();
+	}
+	
+	public void setMe (Player me)
+	{
+		this.me = me;
 	}
 	
 	
@@ -270,6 +276,7 @@ public class GameMap
 			for (int j = 0; j < mins[i].length; j++)
 				if (myFlood[j] < mins[i][j])
 					myFields++;
+		LOGGER.debug("my fields: ", myFields);
 		return myFields;
 	}
 	
@@ -300,7 +307,7 @@ public class GameMap
 		return take;
 	}
 	
-	public String fight (List<Player> enemies, Player me)
+	public String fight (List<Player> enemies)
 	{
 		String out = "AHEAD";
 		int [] strategy = fightStrategy (enemies, me);
@@ -484,13 +491,13 @@ public class GameMap
 	}
 	
 	
-	public List<Integer> optimalFill (Player p)
+	public List<Integer> optimalFill ()
 	{
 		// List<Integer> toGo = new ArrayList<Integer> ();
 		
-		int[] flood = floodFill (p.getPosition (), p.getDirection ());
+		int[] flood = floodFill (me.getPosition (), me.getDirection ());
 		
-		List<Integer> articulationPoints = getArticulationPoints (getCompartmentNumber (p
+		List<Integer> articulationPoints = getArticulationPoints (getCompartmentNumber (me
 			.getPosition ()));
 		
 		// ich muss nur einmal flood fillen -> articulation points sind natuerlich
@@ -498,7 +505,7 @@ public class GameMap
 		
 		// create virtual compartments
 		List<VirtualCompartment> virtualCompartments = getVirtualCompartments (
-			p.getPosition (), flood, articulationPoints);
+			me.getPosition (), flood, articulationPoints);
 		
 		// choose a path through compartments
 		// List<VirtualCompartment> finalCompartmentPath =
@@ -518,7 +525,7 @@ public class GameMap
 					flood,
 					bestCompartmentList.get (i),
 					i < bestCompartmentList.size () - 1 ? bestCompartmentList.get (i + 1).input
-						: -1, p.getDirection ()));
+						: -1, me.getDirection ()));
 			LOGGER.debug("current walkpath: ", walkPath);
 			// System.out.println("post: " + walkPath);
 		}
@@ -698,9 +705,9 @@ public class GameMap
 		// for every two seq try to go through their side
 		// while (((double) (walkPath - insertAt)) / (double) vc.nodes.size() < .8)
 		// 80% would be ok for me.
-		boolean didsmth = true;
+		boolean didsmth = true, didnow = false;
 		int its = 0;
-		while (didsmth && its < 5)
+		while (didsmth && its < 10)
 		{
 			didsmth = false;
 			its++;
@@ -709,29 +716,41 @@ public class GameMap
 			{
 				int p1 = walkPath.get (c);
 				int p2 = walkPath.get (c + 1);
-				
+				didnow = false;
 				if (p1 + 1 == p2 || p1 - 1 == p2)
 				{
 					// p1 left or right of p2
 					if ((c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 - width))) && tryExtend (walkPath, c, visited, p1, p2, p1 - width, p2 - width))
+					{
 						// extended above
 						didsmth = true;
+						didnow = true;
+					}
 					if ((c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 + width))) && tryExtend (walkPath, c, visited, p1, p2, p1 + width, p2 + width))
+					{
 						// extended below
 						didsmth = true;
+						didnow = true;
+					}
 				}
 				else
 				{
 					// p1 above or below p2
 					if (p1 % width != 0 && (c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 - 1))) && tryExtend (walkPath, c, visited, p1, p2, p1 - 1, p2 - 1))
+					{
 						// extended left
 						didsmth = true;
+						didnow = true;
+					}
 					if ((p1 + 1) % width != 0 && (c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 + 1))) && tryExtend (walkPath, c, visited, p1, p2, p1 + 1, p2 + 1))
+					{
 						// extended right
 						didsmth = true;
+						didnow = true;
+					}
 				}
-				
-				c++;
+				if (!didnow)
+					c++;
 			}
 		}
 		
