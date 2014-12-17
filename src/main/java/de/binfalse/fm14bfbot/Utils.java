@@ -3,6 +3,10 @@
  */
 package de.binfalse.fm14bfbot;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 import de.binfalse.bflog.LOGGER;
 
 
@@ -81,7 +85,9 @@ public class Utils
 	 */
 	public static final boolean allowedMove (int pDir, int direction)
 	{
-		return abs (direction - pDir) <= 1;
+		LOGGER.debug ("allowed? ", pDir, " vs ", direction, " = ", abs (direction - pDir));
+		return abs (direction - pDir) <= 1 || (pDir == 3 && direction == 0) || (pDir == 0 && direction == 3);
+		//return abs (direction - pDir) <= 1;// || (pDir == 3 && direction == 0) || (pDir == 0 && direction == 3);
 	}
 	
 	
@@ -155,4 +161,31 @@ public class Utils
 		}
 		LOGGER.debug ("\n" + sb.toString ());
 	}
+	
+
+	
+	
+	public static StringBuffer printMap (int[] m, int width, StringBuffer sb,
+		Collection<Player> players)
+	{
+		Map<Integer, String> pos = new HashMap<Integer, String> ();
+		
+		for (Player p : players)
+			pos.put (p.getPosition (), Utils.resolvPlayerName (p.getId ()));
+		
+		for (int i = 0; i < m.length; i++)
+		{
+			if (pos.get (i) != null)
+				sb.append (pos.get (i));
+			else if (m[i] == Integer.MAX_VALUE)
+				sb.append ("#");
+			else
+				sb.append (m[i]);
+			if ( (i + 1) % width == 0)
+				sb.append ("\n");
+		}
+		return sb;
+	}
+	
+	
 }

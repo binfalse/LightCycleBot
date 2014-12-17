@@ -54,7 +54,7 @@ public class GameMap
 	{
 		compartments = new int[map.length];
 		int cmp = 0;
-		if (map[0] == Integer.MAX_VALUE)
+		if (map[0] != 0)
 			compartments[0] = Integer.MAX_VALUE;
 		else
 			compartments[0] = ++cmp;
@@ -119,10 +119,13 @@ public class GameMap
 	
 	public void updatePlayers (Map<String, Player> players)
 	{
+		updateCompartments ();
 		for (Player p : players.values ())
 		{
 			map[p.getPosition ()] = p.getId ();
-			compartments[p.getPosition ()] = Integer.MAX_VALUE;
+			//compartments[p.getPosition ()] = Integer.MAX_VALUE;
+			
+			// TODO: doing this every round is stupid.
 			
 			// since the maps are quite small and we have plenty of time we could
 			// do the following at every point in time. but let's at least try to
@@ -130,10 +133,17 @@ public class GameMap
 			
 			// TODO: is there a potential new articulation point?
 			// -> recalc aps for this compartment
+			// -> cache aps
 			
 			// TODO: did one of them enter an ap?
 			// -> recalc the compartments and of course recalc aps
 		}
+	}
+	
+	
+	public int [] getCompartmentMap ()
+	{
+		return compartments;
 	}
 	
 	
@@ -190,27 +200,136 @@ public class GameMap
 		return compartments[idxA] == compartments[idxB];
 	}
 	
+	public boolean freeField (int idx)
+	{
+		return map[idx] == 0;
+	}
+	
 	
 	public int getIdx (int x, int y)
 	{
 		return x + width * y;
 	}
 	
-	
-	public StringBuffer dump (StringBuffer sb)
+	public int goodnessOfFlood (int[] myFlood, List<List<int[]>> theirFloods)
 	{
-		for (int i = 0; i < map.length; i++)
+		// this assumes the enemies do smth random.
+		// in that case it increases my chances to win
+		// but i guess they won't do stupid stuff..
+		// however, it's the best i was just able to hack now..
+		
+		int o = 1;
+		for (List<int[]> enemy : theirFloods)
+			o *= enemy.size();
+		//int [][] options = new int [o][myFlood.length];
+		int [][] mins = new int [o][myFlood.length];
+		for (int i = 0; i < mins.length; i++)
+			for (int j = 0; j < mins[i].length; j++)
+				mins[i][j] = Integer.MAX_VALUE;
+		
+		for (int enemy = 0; enemy < theirFloods.size(); enemy++)
 		{
-			if (map[i] == Integer.MAX_VALUE)
-				sb.append ("#");
-			else
-				sb.append (map[i]);
-			if ( (i + 1) % width == 0)
-				sb.append ("\n");
+			if (theirFloods.get(enemy).size () == 0)
+			{
+				LOGGER.warn ("enemy ", enemy, " has no options?");
+				continue;
+			}
+			int split = mins.length / theirFloods.get(enemy).size();
+			//LOGGER.debug("split ", split);
+			for (int enemyOption = 0; enemyOption < theirFloods.get(enemy).size(); enemyOption++)
+			{
+				int [] eO = theirFloods.get(enemy).get(enemyOption);
+				for (int i = 0; i < split; i++)
+				{
+					//
+					int field = i + split * enemyOption;
+					//LOGGER.debug("field ", field);
+					//int [] cur = options[i + split * enemyOption];
+					for (int j = 0; j < myFlood.length; j++)
+					{
+						if (eO[j] < mins[field][j])
+						{
+							//cur[j] = enemy;
+							mins[field][j] = eO[j];
+						}
+					}
+				}
+			}
 		}
-		return sb;
+
+		if (LOGGER.isDebugEnabled())
+		{
+			LOGGER.debug ("after goodness of ");
+			Utils.printMap (myFlood, width);
+			for (int i = 0; i < mins.length; i++)
+				Utils.printMap (mins[i], width);
+		}
+		int myFields = 0;
+		
+		for (int i = 0; i < mins.length; i++)
+			for (int j = 0; j < mins[i].length; j++)
+				if (myFlood[j] < mins[i][j])
+					myFields++;
+		return myFields;
 	}
 	
+	public int[] fightStrategy (List<Player> enemies, Player me)
+	{
+		List<int[]> myFloods = calcPossibleFloods (me);
+		List<List<int[]>> theirFloods = new ArrayList<List<int[]>> ();
+		for (Player enemy : enemies)
+			theirFloods.add(calcPossibleFloods (enemy));
+		
+		int best = -1;
+		int[] take = null;
+		
+		for (int[] myFlood : myFloods)
+		{
+			LOGGER.debug ("old best: ", best);
+			int cur = goodnessOfFlood (myFlood, theirFloods);
+			LOGGER.debug ("cur: ", cur);
+			if (cur > best)
+			{
+				best = cur;
+				take = myFlood;
+			}
+			LOGGER.debug ("new best: ", best);
+		}
+		
+		// from this we can take the field with a 1
+		return take;
+	}
+	
+	public String fight (List<Player> enemies, Player me)
+	{
+		String out = "AHEAD";
+		int [] strategy = fightStrategy (enemies, me);
+		if (strategy != null)
+		{
+			for (int i = 0; i < strategy.length; i++)
+				if (strategy[i] == 1)
+					out = Utils.translateMove (me, i);
+		}
+		else
+			LOGGER.error ("strategy was null!?");
+					
+		return out;
+	}
+
+	
+	public List<int[]> calcPossibleFloods (Player p)
+	{
+		List<int[]> floods = new ArrayList<int[]> ();
+		List<Integer> adj = getAdjacentAvailable(p.getPosition(), p.getDirection());
+
+		LOGGER.debug ("AVAIL ADJ at player ", p.getId (), " (", p.getPosition (), "--", p.getDirection (), "): ", adj);
+		
+		for (int i : adj)
+		{
+			floods.add(floodFill (i, Utils.getDirection(p.getPosition (), i)));
+		}
+		return floods;
+	}
 	
 	public int[] calcVoronoi (List<Player> enemies, Player me)
 	{
@@ -231,7 +350,7 @@ public class GameMap
 		for (int i = 0; i < voronoi.length; i++)
 		{
 			int min = flood[i];
-			if (map[i] < Integer.MAX_VALUE)
+			if (map[i] == 0)
 				voronoi[i] = me.getId ();
 			else
 				voronoi[i] = Integer.MAX_VALUE;
@@ -248,17 +367,6 @@ public class GameMap
 		
 		return voronoi;
 	}
-	
-	
-	/*private List<Integer> getAvailableMoves (GameMap map, Player p)
-	{
-		List<Integer> moves = getAdjacentAvailable (p.getPosition ());
-		int i = 0;
-		while (i < moves.size ())
-			if (moves.get (i))
-				
-				return moves;
-	}*/
 	
 	
 	public List<VirtualCompartment> getVirtualCompartments (int start,
@@ -398,13 +506,12 @@ public class GameMap
 			new ArrayList<VirtualCompartment> (), 0);
 		
 		List<Integer> walkPath = new ArrayList<Integer> ();
-		// System.out.println(p.getPosition());
-		// walkPath.add(p.getPosition());
 		
 		// foreach virtual compartment do
 		
 		for (int i = 0; i < bestCompartmentList.size (); i++)
 		{
+			
 			// System.out.println("pre: " + walkPath);
 			walkPath
 				.addAll (findGoodPath (
@@ -412,14 +519,10 @@ public class GameMap
 					bestCompartmentList.get (i),
 					i < bestCompartmentList.size () - 1 ? bestCompartmentList.get (i + 1).input
 						: -1, p.getDirection ()));
+			LOGGER.debug("current walkpath: ", walkPath);
 			// System.out.println("post: " + walkPath);
 		}
 		
-		// run floodfill from start // i guess we do not need another flood?
-		// best: just go from end to start by finding neighbors with smaller values
-		
-		// take shortest path from start to end
-		// and extend this path
 		
 		return dropDouble (walkPath);
 	}
@@ -444,13 +547,16 @@ public class GameMap
 			// throw new RuntimeException("not yet implemented");
 			int highest = 0;
 			for (int i : vc.nodes)
-			{
 				if (flood[i] > highest)
+				{
 					end = i;
-			}
+					highest = flood[i];
+				}
 		}
 		List<Integer> walkPath = new ArrayList<Integer> ();
 		boolean[] visited = new boolean[flood.length];
+		LOGGER.debug("flood before calculating my shortest path");
+		Utils.printMap(flood, width);
 		walkPath.addAll (shortestPath (flood, visited, start, end));
 		
 		LOGGER.debug ("shortest path: ", walkPath);
@@ -492,6 +598,10 @@ public class GameMap
 			// shortest path start-sum
 			walkPath2.addAll (shortestPath (flood, visited, start, sum));
 			
+			// we need to temporarily change the compartments map
+			// and make set the first part of the short path to unavailable
+			// otherwise the second part of our shortest path will probably
+			// cross it.
 			int [] tmp = compartments;
 			compartments = new int [tmp.length];
 			for (int i = 0; i < tmp.length; i++)
@@ -501,12 +611,16 @@ public class GameMap
 			Utils.printMap(compartments, width);
 			
 			// shortest path sum-end
-			// TODO: is that direction correct?
 			int[] flood2 = floodFill (sum, null);
 			compartments = tmp;
+			
+			
 			LOGGER.debug ("first part of shortest path: ", walkPath2);
-			Utils.printMap(flood2, width);
-			Utils.printMap(compartments, width);
+			if (LOGGER.isDebugEnabled ())
+			{
+				Utils.printMap(flood2, width);
+				Utils.printMap(compartments, width);
+			}
 			visited[sum] = false;
 			//if (walkPath2 != null)
 				//System.exit(1);
@@ -539,7 +653,7 @@ public class GameMap
 			List<Integer> neighbors = getAdjacentAvailable (cur);
 			for (int i : neighbors)
 			{
-				LOGGER.debug ("looking from ", cur, " at neighbor: ", i);
+				LOGGER.debug ("looking from ", cur, " at neighbor: ", i, " to find start ", start, " having ", floodFromStart[start]);
 				if (!visited[i] && floodFromStart[i] < floodFromStart[cur])
 				{
 					LOGGER.debug ("neighbor ", i, " accepted");
@@ -547,6 +661,10 @@ public class GameMap
 					visited[i] = true;
 					walkPath.add (insertAt, i);
 					break;
+				}
+				else
+				{
+					LOGGER.debug (i, " -> ", visited[i], " == ", floodFromStart[i], " -- ", floodFromStart[cur]);
 				}
 			}
 		}
@@ -605,10 +723,10 @@ public class GameMap
 				else
 				{
 					// p1 above or below p2
-					if ((c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 - 1))) && tryExtend (walkPath, c, visited, p1, p2, p1 - 1, p2 - 1))
+					if (p1 % width != 0 && (c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 - 1))) && tryExtend (walkPath, c, visited, p1, p2, p1 - 1, p2 - 1))
 						// extended left
 						didsmth = true;
-					if ((c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 + 1))) && tryExtend (walkPath, c, visited, p1, p2, p1 + 1, p2 + 1))
+					if ((p1 + 1) % width != 0 && (c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 + 1))) && tryExtend (walkPath, c, visited, p1, p2, p1 + 1, p2 + 1))
 						// extended right
 						didsmth = true;
 				}
@@ -654,7 +772,7 @@ public class GameMap
 	{
 		if (p1ext >= 0 && p2ext >= 0 && p1ext < visited.length
 			&& p2ext < visited.length && !visited[p1ext] && !visited[p2ext]
-			&& map[p1ext] < Integer.MAX_VALUE && map[p2ext] < Integer.MAX_VALUE)
+			&& map[p1ext] == 0 && map[p2ext] == 0)
 		{
 			if (LOGGER.isDebugEnabled ())
 				LOGGER.debug ("extending: ", p1, "/", p2, " -> ", p1, "-", p1ext, "-",
@@ -718,44 +836,6 @@ public class GameMap
 	}
 	
 	
-	public StringBuffer dumpCompartments (StringBuffer sb)
-	{
-		for (int i = 0; i < compartments.length; i++)
-		{
-			if (compartments[i] == Integer.MAX_VALUE)
-				sb.append ("#");
-			else
-				sb.append (compartments[i]);
-			if ( (i + 1) % width == 0)
-				sb.append ("\n");
-		}
-		return sb;
-	}
-	
-	
-	public StringBuffer dumpCompartments (StringBuffer sb,
-		Collection<Player> players)
-	{
-		Map<Integer, String> pos = new HashMap<Integer, String> ();
-		
-		for (Player p : players)
-			pos.put (p.getPosition (), Utils.resolvPlayerName (p.getId ()));
-		
-		for (int i = 0; i < compartments.length; i++)
-		{
-			if (pos.get (i) != null)
-				sb.append (pos.get (i));
-			else if (compartments[i] == Integer.MAX_VALUE)
-				sb.append ("#");
-			else
-				sb.append (compartments[i]);
-			if ( (i + 1) % width == 0)
-				sb.append ("\n");
-		}
-		return sb;
-	}
-	
-	
 
 	public List<Integer> getAdjacentAvailable (int idx, int dir)
 	{
@@ -779,19 +859,28 @@ public class GameMap
 		List<Integer> adj = new ArrayList<Integer> ();
 		int comp = compartments[idx];
 		// left?
-		if (idx % width != 0 && compartments[idx - 1] == comp)
+		
+		if (idx % width != 0 && map[idx - 1] < Integer.MAX_VALUE && ((comp == Integer.MAX_VALUE) || compartments[idx - 1] == comp))
 			adj.add (idx - 1);
 		// top
-		if (idx >= width && compartments[idx - width] == comp)
+		if (idx >= width && map[idx - width] < Integer.MAX_VALUE && ((comp == Integer.MAX_VALUE) || compartments[idx - width] == comp))
+		{
+			//LOGGER.debug ("adding ", idx - width, " as ", comp, "---", map[idx - width], "---", compartments[idx - width]);
 			adj.add (idx - width);
+		}
+		//else if (idx >= width)
+			//LOGGER.debug ("not adding ", idx - width, " as ", comp, "---", map[idx - width], "---", compartments[idx - width]);
 		// right
-		if ( (idx + 1) % width != 0 && compartments[idx + 1] == comp)
+		if ( (idx + 1) % width != 0 && map[idx + 1] < Integer.MAX_VALUE&& ((comp == Integer.MAX_VALUE) || compartments[idx + 1] == comp))
 			adj.add (idx + 1);
 		// bottom
-		if (idx + width < compartments.length && compartments[idx + width] == comp)
+		if (idx + width < compartments.length && map[idx + width] < Integer.MAX_VALUE && ((comp == Integer.MAX_VALUE) || compartments[idx + width] == comp))
+		{
+			//LOGGER.debug ("adding ", idx + width, " as ", comp, "---", map[idx + width], "---", compartments[idx + width]);
 			adj.add (idx + width);
+		}
 
-		LOGGER.debug ("adjacents of ", idx, " are ", adj);
+		LOGGER.debug ("adjacents of ", idx, " (comp: " + comp + ")", " are ", adj);
 		return adj;
 	}
 	
@@ -868,6 +957,12 @@ public class GameMap
 	public int getFieldNum ()
 	{
 		return map.length;
+	}
+
+
+	public int [] getMap ()
+	{
+		return map;
 	}
 	
 }

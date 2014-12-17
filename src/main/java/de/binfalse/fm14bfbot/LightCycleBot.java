@@ -4,8 +4,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -20,13 +22,15 @@ import de.binfalse.bflog.LOGGER;
 public class LightCycleBot 
 {
     private BufferedReader in;
+    private PrintStream out;
     private GameMap map;
     private Player me;
     private Map<String, Player> players;
     
-    public LightCycleBot ()
+    public LightCycleBot (BufferedReader in, PrintStream out)
     {
-    	in = new BufferedReader(new InputStreamReader(System.in));
+    	this.in = in;
+    	this.out = out;
     	players = new HashMap<String, Player> ();
     }
     
@@ -51,7 +55,7 @@ public class LightCycleBot
     		{
     			for (Player p : players.values ())
     				LOGGER.debug ("player: ", p.getId (), p == me ? " (me)" : "", " -- ", p.getPosition (), " -- ", p.getDirection ());
-    			LOGGER.debug ("\n", map.dumpCompartments (new StringBuffer (), players.values ()));
+    			LOGGER.debug ("\n", Utils.printMap (map.getCompartmentMap (), map.getWidth (), new StringBuffer (), players.values ()));
     			// do something
     			
     			map.updatePlayers (players);
@@ -78,6 +82,8 @@ public class LightCycleBot
     			LOGGER.debug ("-------------------------------------------------");
     		}
     		
+    		
+    		
     		else
     			throw new RuntimeException ("do not understand " + line);
     	}
@@ -86,25 +92,28 @@ public class LightCycleBot
     private void fight (List<Player> enemies)
     {
     	// there is some enemy in our territory. get rid of him.
-    	
-    	//map.kickThem(enemies, me);
+    	LOGGER.debug ("need to fight");
+    	if (LOGGER.isDebugEnabled ())
+    		LOGGER.debug (Arrays.toString (map.getMap ()), enemies);
+    	sayServer (map.fight (enemies, me));
     }
     
     private void survive ()
     {
     	// try to be as efficient as possible in filling our compartment.
     	// and let's hope the enemies are sillier than our hack
-    	
+    	LOGGER.debug ("need to survive");
     	if (path == null)
     	{
     		path = map.optimalFill(me);
+    		LOGGER.debug("found optimal path: ", path);
     		pathPosition = 1;
     	}
     	
     	if (pathPosition < path.size())
-    		System.out.println(Utils.translateMove(me, path.get(pathPosition++)));
+    		sayServer (Utils.translateMove(me, path.get(pathPosition++)));
     	else
-    		System.out.println("AHEAD");
+    		sayServer ("AHEAD");
     	
     }
     
@@ -125,8 +134,10 @@ public class LightCycleBot
 				player = new Player (Integer.parseInt (tokens[1]));
   			players.put (tokens[1], player);
 			}
+    	LOGGER.debug ("updating player ", player.getId ());
 			
 			player.update (map, tokens[2], tokens[3]);
+    	LOGGER.debug ("player: ", player);
     }
     
     public void done () throws IOException
@@ -137,6 +148,7 @@ public class LightCycleBot
     
     public void init () throws IOException
     {
+    	LOGGER.debug ("starting init");
     	List<String> mapDescr = new ArrayList<String> ();
     	boolean mapStart = false;
     	while (true)
@@ -166,15 +178,27 @@ public class LightCycleBot
     			break;
     		}
     	}
+    	LOGGER.debug ("finished init, map:");
+    	Utils.printMap (map.getMap (), map.getWidth ());
+    	LOGGER.debug ("me: ", me.getId ());
+    }
+    
+    private void sayServer (String s)
+    {
+    	LOGGER.debug (" < ", s);
+    	out.println (s);
     }
     
     private String readServer () throws IOException
     {
-    	return in.readLine ();
+    	String s = in.readLine ();
+    	LOGGER.debug (" > ", s);
+    	return s;
     }
     
     public static void main (String[] args) throws IOException
     {
+    	
     	String process = ManagementFactory.getRuntimeMXBean().getName();
     	File f = new File (("/tmp/lightCycleBot-" + new Date () + process).replaceAll ("\\s", ""));
     	f.createNewFile ();
@@ -184,7 +208,7 @@ public class LightCycleBot
     	LOGGER.setMinLevel (LOGGER.DEBUG);
     	
     	
-    	LightCycleBot bot = new LightCycleBot ();
+    	LightCycleBot bot = new LightCycleBot (new BufferedReader(new InputStreamReader(System.in)), System.out);
     	bot.win ();
     	bot.done ();
     	

@@ -27,6 +27,11 @@ public class Player
 		in = true;
 	}
 	
+	public String toString ()
+	{
+		return "[" +getId () +": " +getPosition () + " -- " + getDirection () + "]";
+	}
+	
 	public void setOut ()
 	{
 		in = false;
@@ -46,11 +51,6 @@ public class Player
 	{
 		return map.sameCompartment (getPosition (), p.getPosition ());
 	}
-	
-	/*public void setPosition (int idx)
-	{
-		pos.add (idx);
-	}*/
 	
 	public int getPosition ()
 	{
