@@ -183,6 +183,7 @@ public class LightCycleBot
     	}
     	LOGGER.debug ("finished init, map:");
     	Utils.printMap (map.getMap (), map.getWidth ());
+    	map.debugPos ();
     	LOGGER.debug ("me: ", me.getId ());
     }
     
@@ -205,10 +206,10 @@ public class LightCycleBot
     	String process = ManagementFactory.getRuntimeMXBean().getName();
     	File f = new File (("/tmp/lightCycleBot-" + new Date () + process).replaceAll ("\\s", ""));
     	f.createNewFile ();
-    	LOGGER.setLogFile (f);
-    	LOGGER.setLogToFile (true);
+    	//LOGGER.setLogFile (f);
+    	//LOGGER.setLogToFile (true);
     	LOGGER.setLogToStdErr (false);
-    	LOGGER.setMinLevel (LOGGER.DEBUG);
+    	//LOGGER.setMinLevel (LOGGER.DEBUG);
     	
     	
     	LightCycleBot bot = new LightCycleBot (new BufferedReader(new InputStreamReader(System.in)), System.out);

@@ -352,4 +352,95 @@ public class TestMap
   	
   	
 	}
+	
+
+	@Test
+	public void compartmentsTest2 ()
+	{
+		//LOGGER.setMinLevel (LOGGER.DEBUG);
+	  	List<String> map = new ArrayList<String> ();
+	  	
+	  	map.add("#########################");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#.......................#");
+	  	map.add("############.############");
+	  	map.add("#.......................#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#########################");
+
+	  	
+
+	  	GameMap gm = new GameMap (map);
+	  	//System.out.println (gm.dumpCompartments (new StringBuffer ()));
+	  	assertEquals ("unexpected number of compartments", gm.getCompartments ().size (), 2);
+	  	
+	  	
+	  	
+		LOGGER.setMinLevel (LOGGER.WARN);
+	  	
+	}
+	
+
+	@Test
+	public void compartmentsTest3 ()
+	{
+		LOGGER.setMinLevel (LOGGER.DEBUG);
+	  	List<String> map = new ArrayList<String> ();
+	  	
+	  	map.add("#########################");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#######.....#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#.......................#");
+	  	map.add("############.############");
+	  	map.add("#.....#.................#");
+	  	map.add("#.....#.....#...........#");
+	  	map.add("#.....#.....#...........#");
+	  	map.add("#.....#.....#...........#");
+	  	map.add("#.....#.....#...........#");
+	  	map.add("#.....#.....#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#...........#...........#");
+	  	map.add("#########################");
+
+	  	
+
+	  	GameMap gm = new GameMap (map);
+	  	//System.out.println (gm.dumpCompartments (new StringBuffer ()));
+		LOGGER.setMinLevel (LOGGER.WARN);
+	  	assertEquals ("unexpected number of compartments", gm.getCompartments ().size (), 2);
+	  	
+	  	
+	  	
+	  	
+	}
+	
 }

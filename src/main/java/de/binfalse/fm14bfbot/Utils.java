@@ -163,6 +163,19 @@ public class Utils
 	}
 	
 
+	public static final void mapReplace (Map<Integer, Integer> map, int from, Integer to)
+	{
+		Integer otherTo = map.get(from);
+		if (otherTo == null)
+			map.put(from,  to);
+		else
+		{
+			if (to.equals(otherTo))
+				return;
+			map.put(from, max (to, otherTo));
+			mapReplace (map, max (to, otherTo), min (to, otherTo));
+		}
+	}
 	
 	
 	public static StringBuffer printMap (int[] m, int width, StringBuffer sb,

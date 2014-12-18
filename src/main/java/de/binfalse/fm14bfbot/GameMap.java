@@ -30,6 +30,7 @@ public class GameMap
 	private List<VirtualCompartment>	bestCompartmentList;
 	private int												bestScore;
 	private Player me;
+	private int myPos;
 	
 	
 	/* private int[] voronoi; */
@@ -95,10 +96,13 @@ public class GameMap
 				int toreplace = Utils.max (top, left);
 				
 				compartments[i] = togo;
-				mapper.put (toreplace, togo);
+				//mapper.put (toreplace, togo);
+				Utils.mapReplace(mapper, toreplace, togo);
 				// System.out.println (toreplace + " -> " + togo);
 			}
 		}
+		//Utils.printMap(compartments, width);
+		//LOGGER.debug("need to replace compartments: ", mapper);
 		
 		// another run to have it consistent and to fill the compartment mapper
 		compartmentMapper = new HashMap<Integer, List<Integer>> ();
@@ -111,6 +115,7 @@ public class GameMap
 				cur = target;
 				target = mapper.get (cur);
 			}
+			//LOGGER.debug("repplacing ", compartments[i], " width ", cur, " - target is ", target, " at ", i);
 			compartments[i] = cur;
 			List<Integer> cmpEl = compartmentMapper.get (cur);
 			if (cmpEl == null)
@@ -120,6 +125,10 @@ public class GameMap
 			}
 			cmpEl.add (i);
 		}
+		//LOGGER.debug("replacing done");
+		//Utils.printMap(compartments, width);
+		//LOGGER.debug("mapper: ", compartmentMapper.keySet());
+		//LOGGER.debug("mapper: ", compartmentMapper);
 	}
 	
 	
@@ -144,6 +153,7 @@ public class GameMap
 			// TODO: did one of them enter an ap?
 			// -> recalc the compartments and of course recalc aps
 		}
+		myPos = me.getPosition();
 	}
 	
 	
@@ -466,8 +476,6 @@ public class GameMap
 	public void chooseBestCompartmentPath (VirtualCompartment vc,
 		List<VirtualCompartment> cur, int curScore)
 	{
-		bestCompartmentList = new ArrayList<VirtualCompartment> ();
-		bestScore = 0;
 		cur.add (vc);
 		curScore += vc.nodes.size ();
 		for (VirtualCompartment c : vc.outputs.values ())
@@ -478,8 +486,17 @@ public class GameMap
 		if (vc.outputs.size () == 0)
 		{
 			// this is leaf... score?
+			
+			if (LOGGER.isDebugEnabled())
+			{
+				LOGGER.debug("vc path has score ", curScore, " -> ");
+				for (VirtualCompartment c : cur)
+					LOGGER.debug("vc ---> ", c.input);
+			}
+			
 			if (curScore > bestScore)
 			{
+				LOGGER.debug("so far this vc path is best! cur: ", curScore, " best was ", bestScore);
 				bestScore = curScore;
 				bestCompartmentList.clear ();
 				for (VirtualCompartment c : cur)
@@ -507,14 +524,22 @@ public class GameMap
 		List<VirtualCompartment> virtualCompartments = getVirtualCompartments (
 			me.getPosition (), flood, articulationPoints);
 		
+		for (VirtualCompartment vc : virtualCompartments)
+			LOGGER.debug("found vc input: ", vc.input);
+		
 		// choose a path through compartments
 		// List<VirtualCompartment> finalCompartmentPath =
+		bestCompartmentList = new ArrayList<VirtualCompartment> ();
+		bestScore = 0;
 		chooseBestCompartmentPath (virtualCompartments.get (0),
 			new ArrayList<VirtualCompartment> (), 0);
 		
 		List<Integer> walkPath = new ArrayList<Integer> ();
 		
 		// foreach virtual compartment do
+		
+		for (VirtualCompartment vc : bestCompartmentList)
+			LOGGER.debug("best vc input: ", vc.input);
 		
 		for (int i = 0; i < bestCompartmentList.size (); i++)
 		{
@@ -726,7 +751,7 @@ public class GameMap
 						didsmth = true;
 						didnow = true;
 					}
-					if ((c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 + width))) && tryExtend (walkPath, c, visited, p1, p2, p1 + width, p2 + width))
+					else if ((c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 + width))) && tryExtend (walkPath, c, visited, p1, p2, p1 + width, p2 + width))
 					{
 						// extended below
 						didsmth = true;
@@ -742,7 +767,7 @@ public class GameMap
 						didsmth = true;
 						didnow = true;
 					}
-					if ((p1 + 1) % width != 0 && (c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 + 1))) && tryExtend (walkPath, c, visited, p1, p2, p1 + 1, p2 + 1))
+					else if ((p1 + 1) % width != 0 && (c != 0 || Utils.allowedMove (dir, Utils.getDirection (p1, p1 + 1))) && tryExtend (walkPath, c, visited, p1, p2, p1 + 1, p2 + 1))
 					{
 						// extended right
 						didsmth = true;
@@ -751,6 +776,8 @@ public class GameMap
 				}
 				if (!didnow)
 					c++;
+				
+				LOGGER.debug("walkpath during extending: ", walkPath);
 			}
 		}
 		
@@ -879,10 +906,11 @@ public class GameMap
 		int comp = compartments[idx];
 		// left?
 		
-		if (idx % width != 0 && map[idx - 1] < Integer.MAX_VALUE && ((comp == Integer.MAX_VALUE) || compartments[idx - 1] == comp))
+		
+		if (idx % width != 0 && (map[idx - 1] == 0 || idx - 1 == myPos)  && ((comp == Integer.MAX_VALUE) || compartments[idx - 1] == comp))
 			adj.add (idx - 1);
 		// top
-		if (idx >= width && map[idx - width] < Integer.MAX_VALUE && ((comp == Integer.MAX_VALUE) || compartments[idx - width] == comp))
+		if (idx >= width && (map[idx - width] == 0 || idx - width == myPos) && ((comp == Integer.MAX_VALUE) || compartments[idx - width] == comp))
 		{
 			//LOGGER.debug ("adding ", idx - width, " as ", comp, "---", map[idx - width], "---", compartments[idx - width]);
 			adj.add (idx - width);
@@ -890,10 +918,10 @@ public class GameMap
 		//else if (idx >= width)
 			//LOGGER.debug ("not adding ", idx - width, " as ", comp, "---", map[idx - width], "---", compartments[idx - width]);
 		// right
-		if ( (idx + 1) % width != 0 && map[idx + 1] < Integer.MAX_VALUE&& ((comp == Integer.MAX_VALUE) || compartments[idx + 1] == comp))
+		if ( (idx + 1) % width != 0 && (map[idx + 1]  == 0 || idx + 1 == myPos) && ((comp == Integer.MAX_VALUE) || compartments[idx + 1] == comp))
 			adj.add (idx + 1);
 		// bottom
-		if (idx + width < compartments.length && map[idx + width] < Integer.MAX_VALUE && ((comp == Integer.MAX_VALUE) || compartments[idx + width] == comp))
+		if (idx + width < compartments.length && (map[idx + width] == 0 || idx + width == myPos) && ((comp == Integer.MAX_VALUE) || compartments[idx + width] == comp))
 		{
 			//LOGGER.debug ("adding ", idx + width, " as ", comp, "---", map[idx + width], "---", compartments[idx + width]);
 			adj.add (idx + width);
@@ -982,6 +1010,25 @@ public class GameMap
 	public int [] getMap ()
 	{
 		return map;
+	}
+
+	public void debugPos()
+	{
+		if (!LOGGER.isDebugEnabled ())
+			return;
+		StringBuffer sb = new StringBuffer ();
+		sb.append ("\t");
+		for (int i = 0; i < width; i++)
+			sb.append ("#").append (i).append ("#\t");
+		sb.append ("\n#0#\t");
+		for (int i = 0; i < map.length; i++)
+		{
+			sb.append (i).append ("\t");
+			if ( (i + 1) % width == 0)
+				sb.append ("\n#").append ((i+1) / width).append ("#\t");
+		}
+		LOGGER.debug ("\n" + sb.toString ());
+		
 	}
 	
 }
