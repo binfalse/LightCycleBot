@@ -476,6 +476,11 @@ public class GameMap
 	public void chooseBestCompartmentPath (VirtualCompartment vc,
 		List<VirtualCompartment> cur, int curScore)
 	{
+		if (bestCompartmentList == null)
+		{
+			bestCompartmentList = new ArrayList<VirtualCompartment> ();
+			bestScore = 0;
+		}
 		cur.add (vc);
 		curScore += vc.nodes.size ();
 		for (VirtualCompartment c : vc.outputs.values ())
