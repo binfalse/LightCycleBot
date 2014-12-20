@@ -1,0 +1,11 @@
+# Binfalse' TronBot
+
+a bot for the 7th programming contest of freiesMagazin.
+implemented in JAVA. more details to be documented.
+
+# Install
+## Using maven:
+just call `mvn package` and you'll find the binaries in the `target` directory.
+
+# Use it
+there is a script in the source dir: `tronbot.sh`. modify it to meet your requirements.. ;-)
