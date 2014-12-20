@@ -440,7 +440,7 @@ public class GameMap
 				best = j;
 			}
 		}
-		return takes.get(0).flood;
+		return takes.get(best).flood;
 	}
 	
 	public String fight (List<Player> enemies)
