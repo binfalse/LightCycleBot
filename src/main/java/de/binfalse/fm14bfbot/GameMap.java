@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 import de.binfalse.bflog.LOGGER;
+import de.binfalse.fm14bfbot.Utils.MyInt;
 
 
 
@@ -31,7 +32,8 @@ public class GameMap
 	private int												bestScore;
 	private Player me;
 	private int myPos;
-	
+	private int maxApIt;
+	private List<Integer> magnets;
 	
 	/* private int[] voronoi; */
 	
@@ -48,7 +50,9 @@ public class GameMap
 					map[row * width + col] = Integer.MAX_VALUE;
 			}
 		}
+		magnets = new ArrayList<Integer> ();
 		updateCompartments ();
+		maxApIt = Utils.min (map.length, 500); 
 	}
 	
 	public void setMe (Player me)
@@ -56,9 +60,14 @@ public class GameMap
 		this.me = me;
 	}
 	
+	public List<Integer> getMagnets ()
+	{
+		return magnets;
+	}
 	
 	private void updateCompartments ()
 	{
+		magnets.clear();
 		compartments = new int[map.length];
 		int cmp = 0;
 		if (map[0] != 0)
@@ -70,6 +79,44 @@ public class GameMap
 		
 		for (int i = 1; i < map.length; i++)
 		{
+			// calc magnets
+			boolean [] mapRestrictions = 
+				{
+					// left
+					i % width != 0,
+					// top
+					i > width,
+					// right
+					(i + 1) % width != 0 && i < map.length - 1,
+					// bottom
+					i < map.length - 1 - width
+				};
+			/*if (walls[0] && walls[1] && walls[2] && walls[3])
+				magnets.add(i);
+			else
+			{
+				int 
+			}*/
+			
+			// top left
+			if (mapRestrictions[0] && mapRestrictions[1]
+					&& map[i - 1] != 0 && map[i - width] != 0 && map[i - width - 1] != 0)
+				magnets.add(i);
+			// top right
+			else if (mapRestrictions[2] && mapRestrictions[1]
+					&& map[i + 1] != 0 && map[i - width] != 0 && map[i - width + 1] != 0)
+				magnets.add(i);
+			// bottom right
+			else if (mapRestrictions[2] && mapRestrictions[3]
+					&& map[i + 1] != 0 && map[i + width] != 0 && map[i + width + 1] != 0)
+				magnets.add(i);
+			// bottom right
+			else if (mapRestrictions[0] && mapRestrictions[3]
+					&& map[i - 1] != 0 && map[i + width] != 0 && map[i + width - 1] != 0)
+				magnets.add(i);
+			
+			
+			
 			// are we a wall?
 			if (map[i] != 0)
 			{
@@ -129,6 +176,8 @@ public class GameMap
 		//Utils.printMap(compartments, width);
 		//LOGGER.debug("mapper: ", compartmentMapper.keySet());
 		//LOGGER.debug("mapper: ", compartmentMapper);
+		
+		LOGGER.debug("magnets: ", magnets);
 	}
 	
 	
@@ -227,7 +276,7 @@ public class GameMap
 		return x + width * y;
 	}
 	
-	public int goodnessOfFlood (int[] myFlood, List<List<int[]>> theirFloods)
+	public double goodnessOfFlood (FightStrategy myFlood, List<List<FightStrategy>> theirFloods)
 	{
 		// this assumes the enemies do smth random.
 		// in that case it increases my chances to win
@@ -235,10 +284,10 @@ public class GameMap
 		// however, it's the best i was just able to hack now..
 		
 		int o = 1;
-		for (List<int[]> enemy : theirFloods)
+		for (List<FightStrategy> enemy : theirFloods)
 			o *= enemy.size();
-		//int [][] options = new int [o][myFlood.length];
-		int [][] mins = new int [o][myFlood.length];
+		int [][] options = new int [o][myFlood.flood.length];
+		int [][] mins = new int [o][myFlood.flood.length];
 		for (int i = 0; i < mins.length; i++)
 			for (int j = 0; j < mins[i].length; j++)
 				mins[i][j] = Integer.MAX_VALUE;
@@ -254,18 +303,18 @@ public class GameMap
 			//LOGGER.debug("split ", split);
 			for (int enemyOption = 0; enemyOption < theirFloods.get(enemy).size(); enemyOption++)
 			{
-				int [] eO = theirFloods.get(enemy).get(enemyOption);
+				int [] eO = theirFloods.get(enemy).get(enemyOption).flood;
 				for (int i = 0; i < split; i++)
 				{
 					//
 					int field = i + split * enemyOption;
 					//LOGGER.debug("field ", field);
-					//int [] cur = options[i + split * enemyOption];
-					for (int j = 0; j < myFlood.length; j++)
+					//int [] cur = options[field];
+					for (int j = 0; j < myFlood.flood.length; j++)
 					{
 						if (eO[j] < mins[field][j])
 						{
-							//cur[j] = enemy;
+							options[field][j] = enemy;
 							mins[field][j] = eO[j];
 						}
 					}
@@ -276,45 +325,122 @@ public class GameMap
 		if (LOGGER.isDebugEnabled())
 		{
 			LOGGER.debug ("after goodness of ");
-			Utils.printMap (myFlood, width);
+			Utils.printMap (myFlood.flood, width);
 			for (int i = 0; i < mins.length; i++)
 				Utils.printMap (mins[i], width);
 		}
 		int myFields = 0;
 		
+		Map<Integer, MyInt> theirs = new HashMap<Integer, MyInt> ();
 		for (int i = 0; i < mins.length; i++)
 			for (int j = 0; j < mins[i].length; j++)
-				if (myFlood[j] < mins[i][j])
+				if (myFlood.flood[j] < mins[i][j])
 					myFields++;
+				else if (mins[i][j] < Integer.MAX_VALUE)
+				{
+					MyInt t = theirs.get(options[i][j]);
+					if (t == null)
+					{
+						t = new MyInt ();
+						theirs.put(options[i][j], t);
+					}
+					t.inc();
+				}
 		LOGGER.debug("my fields: ", myFields);
-		return myFields;
+		
+		int best = 1;
+		for (MyInt i : theirs.values())
+			if (i.val() > best)
+				best = i.val ();
+		
+
+		LOGGER.debug("their fields: ", best);
+		
+		return ((double) myFields) / (double) best;
+	}
+	
+	static class FightStrategy
+	{
+		int start;
+		double score;
+		int [] flood;
+		
+		public FightStrategy (int start, int [] flood)
+		{
+			this.start = start;
+			this.score = 1;
+			this.flood = flood;
+		}
 	}
 	
 	public int[] fightStrategy (List<Player> enemies, Player me)
 	{
-		List<int[]> myFloods = calcPossibleFloods (me);
-		List<List<int[]>> theirFloods = new ArrayList<List<int[]>> ();
+		List<FightStrategy> myFloods = calcPossibleFloods (me);
+		List<List<FightStrategy>> theirFloods = new ArrayList<List<FightStrategy>> ();
 		for (Player enemy : enemies)
 			theirFloods.add(calcPossibleFloods (enemy));
 		
-		int best = -1;
-		int[] take = null;
+		double best = -1;
+		List<FightStrategy> take = new ArrayList<FightStrategy> ();
 		
-		for (int[] myFlood : myFloods)
+		for (FightStrategy myFlood : myFloods)
 		{
 			LOGGER.debug ("old best: ", best);
-			int cur = goodnessOfFlood (myFlood, theirFloods);
+			double cur = goodnessOfFlood (myFlood, theirFloods);
 			LOGGER.debug ("cur: ", cur);
+			if (cur == best)
+				take.add(myFlood);
 			if (cur > best)
 			{
 				best = cur;
-				take = myFlood;
+				take.clear();
+				take.add(myFlood);
+				LOGGER.debug ("will take: ", Arrays.toString(myFlood.flood));
 			}
 			LOGGER.debug ("new best: ", best);
 		}
-		
+
 		// from this we can take the field with a 1
-		return take;
+		return takeBestTake (take);
+	}
+	
+	public int [] takeBestTake (List<FightStrategy> takes)
+	{
+		if (takes.size() == 0)
+			return null;
+		
+		// let's go along the wall
+		int best = 0;
+		double bestScore = -1;
+		
+
+		LOGGER.debug("num of takes: ", takes.size());
+		for (int j = 0; j < takes.size(); j++)
+		{
+			FightStrategy strategy = takes.get(j);
+			int start = strategy.start;
+			for (int i : magnets)
+				strategy.score *= Utils.dnorm(Utils.dist (start, i, width), 7.) * 17.;
+			strategy.score /= (double) getAdjacentAvailable (strategy.start).size();
+			/*for (int i = 0; i < strategy.length; i++)
+				if (strategy[i] == 1)
+				{*/
+					/*int nAdj = getAdjacentAvailable (strategy.start).size();
+					if (nAdj < bestScore)
+					{
+						LOGGER.debug("cur score / bestScore: ", nAdj, " -- ", bestScore);
+						bestScore = nAdj;
+						best = j;
+					}*/
+				//}
+			if (strategy.score > bestScore)
+			{
+				LOGGER.debug("cur score / bestScore: ", strategy.score, " -- ", bestScore);
+				bestScore = strategy.score;
+				best = j;
+			}
+		}
+		return takes.get(0).flood;
 	}
 	
 	public String fight (List<Player> enemies)
@@ -334,16 +460,16 @@ public class GameMap
 	}
 
 	
-	public List<int[]> calcPossibleFloods (Player p)
+	public List<FightStrategy> calcPossibleFloods (Player p)
 	{
-		List<int[]> floods = new ArrayList<int[]> ();
+		List<FightStrategy> floods = new ArrayList<FightStrategy> ();
 		List<Integer> adj = getAdjacentAvailable(p.getPosition(), p.getDirection());
 
 		LOGGER.debug ("AVAIL ADJ at player ", p.getId (), " (", p.getPosition (), "--", p.getDirection (), "): ", adj);
 		
 		for (int i : adj)
 		{
-			floods.add(floodFill (i, Utils.getDirection(p.getPosition (), i)));
+			floods.add(new FightStrategy(i, floodFill (i, Utils.getDirection(p.getPosition (), i), p.getPosition())));
 		}
 		return floods;
 	}
@@ -355,12 +481,12 @@ public class GameMap
 		// and count the number of fields we would get
 		
 		// my flood:
-		int[] flood = floodFill (me.getPosition (), me.getDirection ());
+		int[] flood = floodFill (me.getPosition (), me.getDirection (), -1);
 		
 		// their floods
 		List<int[]> floods = new ArrayList<int[]> ();
 		for (Player enemy : enemies)
-			floods.add (floodFill (enemy.getPosition (), enemy.getDirection ()));
+			floods.add (floodFill (enemy.getPosition (), enemy.getDirection (), -1));
 		
 		// voronoi
 		int[] voronoi = new int[flood.length];
@@ -517,7 +643,7 @@ public class GameMap
 	{
 		// List<Integer> toGo = new ArrayList<Integer> ();
 		
-		int[] flood = floodFill (me.getPosition (), me.getDirection ());
+		int[] flood = floodFill (me.getPosition (), me.getDirection (), -1);
 		
 		List<Integer> articulationPoints = getArticulationPoints (getCompartmentNumber (me
 			.getPosition ()));
@@ -648,7 +774,7 @@ public class GameMap
 			Utils.printMap(compartments, width);
 			
 			// shortest path sum-end
-			int[] flood2 = floodFill (sum, null);
+			int[] flood2 = floodFill (sum, null, -1);
 			compartments = tmp;
 			
 			
@@ -838,9 +964,10 @@ public class GameMap
 	}
 	
 	
-	public int[] floodFill (int idx, Integer dir)
+	public int[] floodFill (int idx, Integer dir, int forbidden)
 	{
 		int[] reached = new int[map.length];
+		
 		List<Integer> todo = new ArrayList<Integer> ();
 		Arrays.fill (reached, Integer.MAX_VALUE);
 		
@@ -854,7 +981,7 @@ public class GameMap
 			
 			List<Integer> adj = next == idx && dir != null ? getAdjacentAvailable (next, dir) : getAdjacentAvailable (next);
 			for (int n : adj)
-				if (reached[n] == Integer.MAX_VALUE)
+				if (map[n] == 0 && n != forbidden && reached[n] == Integer.MAX_VALUE)
 				{
 					reached[n] = r + 1;
 					todo.add (n);
@@ -944,8 +1071,10 @@ public class GameMap
 	// parent[] --> Stores parent vertices in DFS tree
 	// ap[] --> Store articulation points
 	private void APUtil (int u, boolean visited[], int disc[], int low[],
-		int parent[], boolean ap[], Utils.MyInt time)
+		int parent[], boolean ap[], Utils.MyInt time, int it)
 	{
+		if (++it > maxApIt)
+			return;
 		int children = 0;
 		visited[u] = true;
 		time.inc ();
@@ -960,7 +1089,7 @@ public class GameMap
 			{
 				children++;
 				parent[v] = u;
-				APUtil (v, visited, disc, low, parent, ap, time);
+				APUtil (v, visited, disc, low, parent, ap, time, it);
 				
 				// subtree connected to ancestors?
 				low[u] = Utils.min (low[u], low[v]);
@@ -996,7 +1125,7 @@ public class GameMap
 		
 		for (int i : comp)
 			if (visited[i] == false)
-				APUtil (i, visited, disc, low, parent, artPoints, new Utils.MyInt ());
+				APUtil (i, visited, disc, low, parent, artPoints, new Utils.MyInt (), 0);
 		
 		List<Integer> articulationPoints = new ArrayList<Integer> ();
 		for (int i : comp)

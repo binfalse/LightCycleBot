@@ -187,6 +187,26 @@ public class TestMap
 	}
 	
 	@Test
+	public void magnetsTest ()
+	{
+		//LOGGER.setMinLevel (LOGGER.DEBUG);
+  	List<String> map = new ArrayList<String> ();
+  	map.add ("#.....##..");
+  	map.add ("......#.##");
+  	map.add ("....#.#...");
+  	map.add ("..........");
+  	map.add ("..........");
+  	map.add ("..........");
+  	map.add ("..#.......");
+  	map.add ("..##..#...");
+  	map.add (".........#");
+
+  	GameMap gm = new GameMap (map);
+  	System.out.println(gm.getMagnets());
+  	
+	}
+	
+	@Test
 	public void floodfillTest ()
 	{
 		//LOGGER.setMinLevel (LOGGER.DEBUG);
@@ -206,7 +226,7 @@ public class TestMap
 		String [] line = "POS 1 2,5 EAST".split (" ");
 		p.update (gm, line[2], line[3]);
   	
-		int [] m = gm.floodFill (p.getPosition (), p.getDirection ());
+		int [] m = gm.floodFill (p.getPosition (), p.getDirection (), -1);
 		int max = 0;
 		for (int i = 0; i < m.length; i++)
 			if (max < m[i] && m[i] != Integer.MAX_VALUE)
@@ -230,7 +250,7 @@ public class TestMap
   	map.add ("......#...");
   	
   	gm = new GameMap (map);
-  	m = gm.floodFill (p.getPosition (), p.getDirection ());
+  	m = gm.floodFill (p.getPosition (), p.getDirection (), -1);
 		max = 0;
 		for (int i = 0; i < m.length; i++)
 			if (max < m[i] && m[i] != Integer.MAX_VALUE)
@@ -239,7 +259,7 @@ public class TestMap
   	
 
   	int [] m2 = m;
-  	m = gm.floodFill (9, null);
+  	m = gm.floodFill (9, null, -1);
 		for (int i = 0; i < m.length; i++)
 			if (max < m[i] && m[i] != Integer.MAX_VALUE)
 				max = m[i];
@@ -350,7 +370,27 @@ public class TestMap
   	assertEquals ("unexpected number of articulation points in compartment ", 0, gm.getArticulationPoints (6).size ());
   	assertEquals ("unexpected number of articulation points in compartment ", 0, gm.getArticulationPoints (7).size ());
   	
-  	
+
+	}
+	
+	@Test
+	public void testNorm ()
+	{
+		assertEquals ("norm is wrong", 0.5135638, ((double)25) * Utils.dnorm(10, 7), .01);
+		assertEquals ("norm is wrong", 0.03456725, Utils.dnorm(7, 7), .01);
+		assertEquals ("norm is wrong", 0.01079819, Utils.dnorm(10, 5), .01);
+	}
+	
+	
+	@Test
+	public void testDist ()
+	{
+		assertEquals ("dist is wrong", 1, Utils.dist(15, 25, 10));
+		assertEquals ("dist is wrong", 2, Utils.dist(15, 26, 10));
+		assertEquals ("dist is wrong", 2, Utils.dist(15, 24, 10));
+		assertEquals ("dist is wrong", 3, Utils.dist(15, 36, 10));
+		assertEquals ("dist is wrong", 8, Utils.dist(19, 11, 10));
+		assertEquals ("dist is wrong", 9, Utils.dist(19, 21, 10));
 	}
 	
 

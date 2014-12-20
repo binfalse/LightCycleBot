@@ -11,6 +11,7 @@ import java.util.List;
 import org.junit.Test;
 
 import de.binfalse.bflog.LOGGER;
+import de.binfalse.fm14bfbot.GameMap.FightStrategy;
 
 
 /**
@@ -75,41 +76,43 @@ public class TestFight
 		GameMap gm = new GameMap (map);
 		
 		
-		int [] me = {1,2,3,4};
-		List<List<int[]>> theirFloods = new ArrayList<List<int[]>> ();
+		FightStrategy me = new FightStrategy(0, new int [] {1,2,3,4});
+		List<List<FightStrategy>> theirFloods = new ArrayList<List<FightStrategy>> ();
 		for (int i = 0; i < 3; i++)
-			theirFloods.add(new ArrayList<int[]> ());
+			theirFloods.add(new ArrayList<FightStrategy> ());
 		
 		// player 1
-		theirFloods.get(0).add(new int [] {5,3,5,5});
-		theirFloods.get(0).add(new int [] {5,1,5,5});
+		theirFloods.get(0).add(new FightStrategy(0, new int [] {5,3,5,5}));
+		theirFloods.get(0).add(new FightStrategy(0, new int [] {5,1,5,5}));
 		// player 2
-		theirFloods.get(1).add(new int [] {5,5,5,5});
-		theirFloods.get(1).add(new int [] {4,5,5,2});
-		theirFloods.get(1).add(new int [] {5,7,5,5});
+		theirFloods.get(1).add(new FightStrategy(0, new int [] {5,5,5,5}));
+		theirFloods.get(1).add(new FightStrategy(0, new int [] {4,5,5,2}));
+		theirFloods.get(1).add(new FightStrategy(0, new int [] {5,7,5,5}));
 		// player 3
-		theirFloods.get(2).add(new int [] {5,5,2,5});
+		theirFloods.get(2).add(new FightStrategy(0, new int [] {5,5,2,5}));
 	
 		LOGGER.debug(gm.goodnessOfFlood(me, theirFloods));
 		LOGGER.setMinLevel (LOGGER.WARN);
 		
 
-		assertEquals ("goodness of floods seems to be wrong", 13, gm.goodnessOfFlood(me, theirFloods));
+		//assertEquals ("goodness of floods seems to be wrong", 13, gm.goodnessOfFlood(me, theirFloods), .1);
+		assertEquals ("goodness of floods seems to be wrong", 2.1666666, gm.goodnessOfFlood(me, theirFloods), .1);
 		
 		
 
-		me = new int [] {1,2,3,4};
-		theirFloods = new ArrayList<List<int[]>> ();
+		me = new FightStrategy(0, new int [] {1,2,3,4});
+		theirFloods = new ArrayList<List<FightStrategy>> ();
 		for (int i = 0; i < 1; i++)
-			theirFloods.add(new ArrayList<int[]> ());
+			theirFloods.add(new ArrayList<FightStrategy> ());
 		
 		// player 1
-		theirFloods.get(0).add(new int [] {5,3,2,5});
-		theirFloods.get(0).add(new int [] {5,1,5,4});
+		theirFloods.get(0).add(new FightStrategy(0, new int [] {5,3,2,5}));
+		theirFloods.get(0).add(new FightStrategy(0, new int [] {5,1,5,4}));
 	
 		LOGGER.debug(gm.goodnessOfFlood(me, theirFloods));
 		LOGGER.setMinLevel (LOGGER.WARN);
-		assertEquals ("goodness of floods seems to be wrong", 5, gm.goodnessOfFlood(me, theirFloods));
+		//assertEquals ("goodness of floods seems to be wrong", 5, gm.goodnessOfFlood(me, theirFloods), .1);
+		assertEquals ("goodness of floods seems to be wrong", 1.66666666, gm.goodnessOfFlood(me, theirFloods), .1);
 		
 	}
 }

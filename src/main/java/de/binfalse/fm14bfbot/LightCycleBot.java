@@ -53,6 +53,8 @@ public class LightCycleBot
 
     		else if (line.startsWith ("ROUND"))
     		{
+    			if (line.startsWith ("ROUND 100"))
+    				LOGGER.setMinLevel (LOGGER.DEBUG);;
     			for (Player p : players.values ())
     				LOGGER.debug ("player: ", p.getId (), p == me ? " (me)" : "", " -- ", p.getPosition (), " -- ", p.getDirection ());
     			
@@ -206,10 +208,10 @@ public class LightCycleBot
     	String process = ManagementFactory.getRuntimeMXBean().getName();
     	File f = new File (("/tmp/lightCycleBot-" + new Date () + process).replaceAll ("\\s", ""));
     	f.createNewFile ();
-    	//LOGGER.setLogFile (f);
-    	//LOGGER.setLogToFile (true);
+    	LOGGER.setLogFile (f);
+    	LOGGER.setLogToFile (true);
     	LOGGER.setLogToStdErr (false);
-    	//LOGGER.setMinLevel (LOGGER.DEBUG);
+    	LOGGER.setMinLevel (LOGGER.DEBUG);
     	
     	
     	LightCycleBot bot = new LightCycleBot (new BufferedReader(new InputStreamReader(System.in)), System.out);

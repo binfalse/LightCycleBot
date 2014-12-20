@@ -200,5 +200,17 @@ public class Utils
 		return sb;
 	}
 	
+	public static final double dnorm (double x, double sig)
+	{
+		return 1./(sig*Math.sqrt(2.*Math.PI))*Math.exp(-(x*x)/(2.*sig*sig));
+	}
+	
+	public static int dist (int i, int j, int width)
+	{
+		int dX = abs (i%width - j%width);
+		int dY = abs (i/width - j/width);
+		return dX + dY;
+		
+	}
 	
 }

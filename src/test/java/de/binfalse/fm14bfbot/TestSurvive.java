@@ -42,7 +42,7 @@ public class TestSurvive
 			String [] line = "POS 1 1,1 W".split (" ");
 			p.update (gm, line[2], line[3]);
 			
-		int [] flood = gm.floodFill (p.getPosition(), p.getDirection ());
+		int [] flood = gm.floodFill (p.getPosition(), p.getDirection (), -1);
 		
 		List<Integer> articulationPoints = gm.getArticulationPoints (gm.getCompartmentNumber (p.getPosition()));
 		
@@ -114,7 +114,7 @@ public class TestSurvive
 		{
 			LOGGER.debug(path);
 			
-			int [] flood = gm.floodFill (p.getPosition(), p.getDirection ());
+			int [] flood = gm.floodFill (p.getPosition(), p.getDirection (), -1);
 
 			Utils.printMap (flood, gm.getWidth());
 		
@@ -166,7 +166,7 @@ public class TestSurvive
 			String [] line = "POS 1 2,5 W".split (" ");
 			p.update (gm, line[2], line[3]);
 			
-		int [] flood = gm.floodFill (p.getPosition(), p.getDirection ());
+		int [] flood = gm.floodFill (p.getPosition(), p.getDirection (), -1);
 		
 		List<Integer> articulationPoints = gm.getArticulationPoints (gm.getCompartmentNumber (p.getPosition()));
 		
