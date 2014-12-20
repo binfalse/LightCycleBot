@@ -43,7 +43,6 @@ import java.util.List;
 
 import org.junit.Test;
 
-import de.binfalse.bflog.LOGGER;
 import de.binfalse.fm14bfbot.GameMap.VirtualCompartment;
 
 
@@ -161,10 +160,10 @@ public class TestMap
 		
 		int [] voronoi = gm.calcVoronoi(enemies, p);
 		
-		if (LOGGER.isDebugEnabled ())
+		/*if (LOGGER.isDebugEnabled ())
 		{
 			Utils.printMap (voronoi, gm.getWidth());
-		}
+		}*/
 		
 		int [] counter = new int [3];
 		int sum = 0;
@@ -183,7 +182,7 @@ public class TestMap
 			sum += counter[i];
 		assertEquals ("tessilation failed. map size?", voronoi.length, sum);
 
-		LOGGER.setMinLevel (LOGGER.WARN);
+		//LOGGER.setMinLevel (LOGGER.WARN);
 	}
 	
 	@Test
@@ -232,7 +231,7 @@ public class TestMap
 			if (max < m[i] && m[i] != Integer.MAX_VALUE)
 				max = m[i];
 		
-		Utils.printMap (m, gm.getWidth ());
+		//Utils.printMap (m, gm.getWidth ());
 		
 		assertEquals ("floodfill seems to be incorrect", 17, max);
 		
@@ -270,20 +269,7 @@ public class TestMap
   	assertEquals ("floodfill seems to be incorrect", m2[9], m[p.getPosition ()]);
   	assertEquals ("floodfill seems to be incorrect", 13, m[p.getPosition ()]);
 		
-  	/*m=m2;
-		StringBuffer sb = new StringBuffer ();
-		for (int i = 0; i < m.length; i++)
-		{
-			if (m[i] == Integer.MAX_VALUE)
-				sb.append ("#\t");
-			else
-				sb.append (m[i]).append ("\t");
-			if ((i + 1) % gm.getWidth () == 0)
-				sb.append ("\n");
-		}
-		System.out.println (sb.toString ());*/
-
-		LOGGER.setMinLevel (LOGGER.WARN);
+		//LOGGER.setMinLevel (LOGGER.WARN);
 	}
 	
 	
@@ -434,7 +420,7 @@ public class TestMap
 	  	
 	  	
 	  	
-		LOGGER.setMinLevel (LOGGER.WARN);
+		//LOGGER.setMinLevel (LOGGER.WARN);
 	  	
 	}
 	
@@ -442,7 +428,7 @@ public class TestMap
 	@Test
 	public void compartmentsTest3 ()
 	{
-		LOGGER.setMinLevel (LOGGER.DEBUG);
+		//LOGGER.setMinLevel (LOGGER.DEBUG);
 	  	List<String> map = new ArrayList<String> ();
 	  	
 	  	map.add("#########################");
@@ -475,7 +461,7 @@ public class TestMap
 
 	  	GameMap gm = new GameMap (map);
 	  	//System.out.println (gm.dumpCompartments (new StringBuffer ()));
-		LOGGER.setMinLevel (LOGGER.WARN);
+		//LOGGER.setMinLevel (LOGGER.WARN);
 	  	assertEquals ("unexpected number of compartments", gm.getCompartments ().size (), 2);
 	  	
 	  	

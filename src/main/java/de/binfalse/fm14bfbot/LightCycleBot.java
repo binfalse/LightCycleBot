@@ -13,8 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import de.binfalse.bflog.LOGGER;
-
 /**
  * Hello world!
  *
@@ -53,16 +51,11 @@ public class LightCycleBot
 
     		else if (line.startsWith ("ROUND"))
     		{
-    			if (line.startsWith ("ROUND 100"))
-    				LOGGER.setMinLevel (LOGGER.DEBUG);;
-    			for (Player p : players.values ())
-    				LOGGER.debug ("player: ", p.getId (), p == me ? " (me)" : "", " -- ", p.getPosition (), " -- ", p.getDirection ());
     			
     			// do something
     			
     			map.updatePlayers (players);
     			
-    			LOGGER.debug ("\n", Utils.printMap (map.getCompartmentMap (), map.getWidth (), new StringBuffer (), players.values ()));
     			
     			// is this fight or endgame?
     			List<Player> enemies = new ArrayList<Player> ();
@@ -82,8 +75,6 @@ public class LightCycleBot
     				survive ();
     			else
     				fight (enemies);
-
-    			LOGGER.debug ("-------------------------------------------------");
     		}
     		
     		
@@ -96,9 +87,6 @@ public class LightCycleBot
     private void fight (List<Player> enemies)
     {
     	// there is some enemy in our territory. get rid of him.
-    	LOGGER.debug ("need to fight");
-    	if (LOGGER.isDebugEnabled ())
-    		LOGGER.debug (Arrays.toString (map.getMap ()), enemies);
     	sayServer (map.fight (enemies));
     }
     
@@ -106,11 +94,9 @@ public class LightCycleBot
     {
     	// try to be as efficient as possible in filling our compartment.
     	// and let's hope the enemies are sillier than our hack
-    	LOGGER.debug ("need to survive");
     	if (path == null)
     	{
     		path = map.optimalFill();
-    		LOGGER.debug("found optimal path: ", path);
     		pathPosition = 1;
     	}
     	
@@ -138,10 +124,8 @@ public class LightCycleBot
 				player = new Player (Integer.parseInt (tokens[1]));
   			players.put (tokens[1], player);
 			}
-    	LOGGER.debug ("updating player ", player.getId ());
 			
 			player.update (map, tokens[2], tokens[3]);
-    	LOGGER.debug ("player: ", player);
     }
     
     public void done () throws IOException
@@ -152,7 +136,6 @@ public class LightCycleBot
     
     public void init () throws IOException
     {
-    	LOGGER.debug ("starting init");
     	List<String> mapDescr = new ArrayList<String> ();
     	boolean mapStart = false;
     	while (true)
@@ -183,42 +166,25 @@ public class LightCycleBot
     			break;
     		}
     	}
-    	LOGGER.debug ("finished init, map:");
-    	Utils.printMap (map.getMap (), map.getWidth ());
-    	map.debugPos ();
-    	LOGGER.debug ("me: ", me.getId ());
+    	//Utils.printMap (map.getMap (), map.getWidth ());
+    	//map.debugPos ();
     }
     
     private void sayServer (String s)
     {
-    	LOGGER.debug (" < ", s);
     	out.println (s);
     }
     
     private String readServer () throws IOException
     {
     	String s = in.readLine ();
-    	LOGGER.debug (" > ", s);
     	return s;
     }
     
     public static void main (String[] args) throws IOException
     {
-    	
-    	String process = ManagementFactory.getRuntimeMXBean().getName();
-    	File f = new File (("/tmp/lightCycleBot-" + new Date () + process).replaceAll ("\\s", ""));
-    	f.createNewFile ();
-    	LOGGER.setLogFile (f);
-    	LOGGER.setLogToFile (true);
-    	LOGGER.setLogToStdErr (false);
-    	LOGGER.setMinLevel (LOGGER.DEBUG);
-    	
-    	
     	LightCycleBot bot = new LightCycleBot (new BufferedReader(new InputStreamReader(System.in)), System.out);
     	bot.win ();
     	bot.done ();
-    	
-    	
-    	LOGGER.closeLogger ();
     }
 }

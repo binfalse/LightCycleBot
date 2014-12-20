@@ -10,7 +10,6 @@ import java.util.List;
 
 import org.junit.Test;
 
-import de.binfalse.bflog.LOGGER;
 import de.binfalse.fm14bfbot.GameMap.FightStrategy;
 
 
@@ -91,8 +90,8 @@ public class TestFight
 		// player 3
 		theirFloods.get(2).add(new FightStrategy(0, new int [] {5,5,2,5}));
 	
-		LOGGER.debug(gm.goodnessOfFlood(me, theirFloods));
-		LOGGER.setMinLevel (LOGGER.WARN);
+		//LOGGER.debug(gm.goodnessOfFlood(me, theirFloods));
+		//LOGGER.setMinLevel (LOGGER.WARN);
 		
 
 		//assertEquals ("goodness of floods seems to be wrong", 13, gm.goodnessOfFlood(me, theirFloods), .1);
@@ -109,8 +108,8 @@ public class TestFight
 		theirFloods.get(0).add(new FightStrategy(0, new int [] {5,3,2,5}));
 		theirFloods.get(0).add(new FightStrategy(0, new int [] {5,1,5,4}));
 	
-		LOGGER.debug(gm.goodnessOfFlood(me, theirFloods));
-		LOGGER.setMinLevel (LOGGER.WARN);
+		//LOGGER.debug(gm.goodnessOfFlood(me, theirFloods));
+		//LOGGER.setMinLevel (LOGGER.WARN);
 		//assertEquals ("goodness of floods seems to be wrong", 5, gm.goodnessOfFlood(me, theirFloods), .1);
 		assertEquals ("goodness of floods seems to be wrong", 1.66666666, gm.goodnessOfFlood(me, theirFloods), .1);
 		

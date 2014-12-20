@@ -10,7 +10,6 @@ import java.util.List;
 
 import org.junit.Test;
 
-import de.binfalse.bflog.LOGGER;
 import de.binfalse.fm14bfbot.GameMap.VirtualCompartment;
 
 
@@ -66,7 +65,7 @@ public class TestSurvive
 		//System.out.println(walkPath);
 		
 		
-		if (LOGGER.isDebugEnabled ())
+		/*if (LOGGER.isDebugEnabled ())
 		{
 			int [] walking = new int [flood.length];
 			//Arrays.fill (walking, 0)
@@ -75,7 +74,7 @@ public class TestSurvive
 				walking[i] = ++n;
 			
 			Utils.printMap (walking, gm.getWidth());
-		}
+		}*/
 		
 		
 		assertEquals ("walk path not optimal", 70, walkPath.size ());
@@ -110,13 +109,13 @@ public class TestSurvive
 		List<Integer> path = gm.optimalFill();
 		
 		
-		if (LOGGER.isDebugEnabled ())
+		/*if (LOGGER.isDebugEnabled ())
 		{
 			LOGGER.debug(path);
 			
 			int [] flood = gm.floodFill (p.getPosition(), p.getDirection (), -1);
 
-			Utils.printMap (flood, gm.getWidth());
+			//Utils.printMap (flood, gm.getWidth());
 		
 			int [] walking = new int [flood.length];
 			//Arrays.fill (walking, Integer.MAX_VALUE);
@@ -135,9 +134,9 @@ public class TestSurvive
 				if (flood[i] == Integer.MAX_VALUE)
 					walking[i] = -1;
 			
-			Utils.printMap (walking, gm.getWidth());
-		}
-		LOGGER.setMinLevel (LOGGER.WARN);
+			//Utils.printMap (walking, gm.getWidth());
+		}*/
+		//LOGGER.setMinLevel (LOGGER.WARN);
 		
 		assertEquals ("walk path not optimal", 28, path.size ());
 		assertEquals ("walk starts at bad position", 40, (int) path.get (0));
@@ -170,7 +169,7 @@ public class TestSurvive
 		
 		List<Integer> articulationPoints = gm.getArticulationPoints (gm.getCompartmentNumber (p.getPosition()));
 		
-		LOGGER.debug ("aps: ", articulationPoints);
+		//LOGGER.debug ("aps: ", articulationPoints);
 		
 		// ich muss nur einmal flood fillen -> articulation points sind natuerlich die 1 in den neuen compartments..
 		
@@ -184,10 +183,10 @@ public class TestSurvive
 		List<VirtualCompartment> bestVCPath = gm.getBestCompartmentSequence();
 		List<Integer> walkPath = new ArrayList<Integer> ();
 		
-		LOGGER.debug (bestVCPath.get(0).input + " -> " +  bestVCPath.get(1).input);
+		//LOGGER.debug (bestVCPath.get(0).input + " -> " +  bestVCPath.get(1).input);
 		
 		walkPath = gm.findGoodPath(flood, bestVCPath.get(0), bestVCPath.get(1).input, p.getDirection ());
-		if (LOGGER.isDebugEnabled ())
+		/*if (LOGGER.isDebugEnabled ())
 		{
 			LOGGER.debug (walkPath);
 		
@@ -200,7 +199,7 @@ public class TestSurvive
 			Utils.printMap (walking, gm.getWidth());
 			LOGGER.debug(walkPath);
 		}
-		LOGGER.setMinLevel (LOGGER.WARN);
+		LOGGER.setMinLevel (LOGGER.WARN);*/
 		
 		assertEquals ("walk path not optimal", 19, walkPath.size ());
 		assertEquals ("walk starts at bad position", 41, (int) walkPath.get (0));

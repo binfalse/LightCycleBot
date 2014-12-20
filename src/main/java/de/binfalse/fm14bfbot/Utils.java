@@ -7,8 +7,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.binfalse.bflog.LOGGER;
-
 
 /**
  * @author Martin Scharm
@@ -85,9 +83,7 @@ public class Utils
 	 */
 	public static final boolean allowedMove (int pDir, int direction)
 	{
-		LOGGER.debug ("allowed? ", pDir, " vs ", direction, " = ", abs (direction - pDir));
 		return abs (direction - pDir) <= 1 || (pDir == 3 && direction == 0) || (pDir == 0 && direction == 3);
-		//return abs (direction - pDir) <= 1;// || (pDir == 3 && direction == 0) || (pDir == 0 && direction == 3);
 	}
 	
 	
@@ -141,7 +137,7 @@ public class Utils
 	 * @param width
 	 *          the width
 	 */
-	public static void printMap (int[] m, int width)
+	/*public static void printMap (int[] m, int width)
 	{
 		if (!LOGGER.isDebugEnabled ())
 			return;
@@ -160,7 +156,7 @@ public class Utils
 				sb.append ("\n#").append ((i+1) / width).append ("#\t");
 		}
 		LOGGER.debug ("\n" + sb.toString ());
-	}
+	}*/
 	
 
 	public static final void mapReplace (Map<Integer, Integer> map, int from, Integer to)

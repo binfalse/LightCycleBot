@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import de.binfalse.bflog.LOGGER;
 import de.binfalse.fm14bfbot.Utils.MyInt;
 
 
@@ -172,12 +171,6 @@ public class GameMap
 			}
 			cmpEl.add (i);
 		}
-		//LOGGER.debug("replacing done");
-		//Utils.printMap(compartments, width);
-		//LOGGER.debug("mapper: ", compartmentMapper.keySet());
-		//LOGGER.debug("mapper: ", compartmentMapper);
-		
-		LOGGER.debug("magnets: ", magnets);
 	}
 	
 	
@@ -295,10 +288,8 @@ public class GameMap
 		for (int enemy = 0; enemy < theirFloods.size(); enemy++)
 		{
 			if (theirFloods.get(enemy).size () == 0)
-			{
-				LOGGER.warn ("enemy ", enemy, " has no options?");
 				continue;
-			}
+			
 			int split = mins.length / theirFloods.get(enemy).size();
 			//LOGGER.debug("split ", split);
 			for (int enemyOption = 0; enemyOption < theirFloods.get(enemy).size(); enemyOption++)
@@ -321,14 +312,6 @@ public class GameMap
 				}
 			}
 		}
-
-		if (LOGGER.isDebugEnabled())
-		{
-			LOGGER.debug ("after goodness of ");
-			Utils.printMap (myFlood.flood, width);
-			for (int i = 0; i < mins.length; i++)
-				Utils.printMap (mins[i], width);
-		}
 		int myFields = 0;
 		
 		Map<Integer, MyInt> theirs = new HashMap<Integer, MyInt> ();
@@ -346,15 +329,11 @@ public class GameMap
 					}
 					t.inc();
 				}
-		LOGGER.debug("my fields: ", myFields);
 		
 		int best = 1;
 		for (MyInt i : theirs.values())
 			if (i.val() > best)
 				best = i.val ();
-		
-
-		LOGGER.debug("their fields: ", best);
 		
 		return ((double) myFields) / (double) best;
 	}
@@ -385,9 +364,7 @@ public class GameMap
 		
 		for (FightStrategy myFlood : myFloods)
 		{
-			LOGGER.debug ("old best: ", best);
 			double cur = goodnessOfFlood (myFlood, theirFloods);
-			LOGGER.debug ("cur: ", cur);
 			if (cur == best)
 				take.add(myFlood);
 			if (cur > best)
@@ -395,9 +372,7 @@ public class GameMap
 				best = cur;
 				take.clear();
 				take.add(myFlood);
-				LOGGER.debug ("will take: ", Arrays.toString(myFlood.flood));
 			}
-			LOGGER.debug ("new best: ", best);
 		}
 
 		// from this we can take the field with a 1
@@ -414,7 +389,6 @@ public class GameMap
 		double bestScore = -1;
 		
 
-		LOGGER.debug("num of takes: ", takes.size());
 		for (int j = 0; j < takes.size(); j++)
 		{
 			FightStrategy strategy = takes.get(j);
@@ -422,20 +396,8 @@ public class GameMap
 			for (int i : magnets)
 				strategy.score *= Utils.dnorm(Utils.dist (start, i, width), 7.) * 17.;
 			strategy.score /= (double) getAdjacentAvailable (strategy.start).size();
-			/*for (int i = 0; i < strategy.length; i++)
-				if (strategy[i] == 1)
-				{*/
-					/*int nAdj = getAdjacentAvailable (strategy.start).size();
-					if (nAdj < bestScore)
-					{
-						LOGGER.debug("cur score / bestScore: ", nAdj, " -- ", bestScore);
-						bestScore = nAdj;
-						best = j;
-					}*/
-				//}
 			if (strategy.score > bestScore)
 			{
-				LOGGER.debug("cur score / bestScore: ", strategy.score, " -- ", bestScore);
 				bestScore = strategy.score;
 				best = j;
 			}
@@ -453,8 +415,6 @@ public class GameMap
 				if (strategy[i] == 1)
 					out = Utils.translateMove (me, i);
 		}
-		else
-			LOGGER.error ("strategy was null!?");
 					
 		return out;
 	}
@@ -464,8 +424,6 @@ public class GameMap
 	{
 		List<FightStrategy> floods = new ArrayList<FightStrategy> ();
 		List<Integer> adj = getAdjacentAvailable(p.getPosition(), p.getDirection());
-
-		LOGGER.debug ("AVAIL ADJ at player ", p.getId (), " (", p.getPosition (), "--", p.getDirection (), "): ", adj);
 		
 		for (int i : adj)
 		{
@@ -617,17 +575,8 @@ public class GameMap
 		if (vc.outputs.size () == 0)
 		{
 			// this is leaf... score?
-			
-			if (LOGGER.isDebugEnabled())
-			{
-				LOGGER.debug("vc path has score ", curScore, " -> ");
-				for (VirtualCompartment c : cur)
-					LOGGER.debug("vc ---> ", c.input);
-			}
-			
 			if (curScore > bestScore)
 			{
-				LOGGER.debug("so far this vc path is best! cur: ", curScore, " best was ", bestScore);
 				bestScore = curScore;
 				bestCompartmentList.clear ();
 				for (VirtualCompartment c : cur)
@@ -655,8 +604,6 @@ public class GameMap
 		List<VirtualCompartment> virtualCompartments = getVirtualCompartments (
 			me.getPosition (), flood, articulationPoints);
 		
-		for (VirtualCompartment vc : virtualCompartments)
-			LOGGER.debug("found vc input: ", vc.input);
 		
 		// choose a path through compartments
 		// List<VirtualCompartment> finalCompartmentPath =
@@ -669,21 +616,15 @@ public class GameMap
 		
 		// foreach virtual compartment do
 		
-		for (VirtualCompartment vc : bestCompartmentList)
-			LOGGER.debug("best vc input: ", vc.input);
 		
 		for (int i = 0; i < bestCompartmentList.size (); i++)
 		{
-			
-			// System.out.println("pre: " + walkPath);
 			walkPath
 				.addAll (findGoodPath (
 					flood,
 					bestCompartmentList.get (i),
 					i < bestCompartmentList.size () - 1 ? bestCompartmentList.get (i + 1).input
 						: -1, me.getDirection ()));
-			LOGGER.debug("current walkpath: ", walkPath);
-			// System.out.println("post: " + walkPath);
 		}
 		
 		
@@ -718,17 +659,13 @@ public class GameMap
 		}
 		List<Integer> walkPath = new ArrayList<Integer> ();
 		boolean[] visited = new boolean[flood.length];
-		LOGGER.debug("flood before calculating my shortest path");
-		Utils.printMap(flood, width);
+		//Utils.printMap(flood, width);
 		walkPath.addAll (shortestPath (flood, visited, start, end));
-		
-		LOGGER.debug ("shortest path: ", walkPath);
 		
 		extendPath (walkPath, visited, vc, dir);
 		
 		if ( ((double) (walkPath.size ())) / (double) vc.nodes.size () < .8)
 		{
-			LOGGER.debug ("need to add waypoint...");
 			// let's try a different approach
 			// there is a big region we were not able to reach.
 			// add another waypoint into unvisited..
@@ -740,11 +677,9 @@ public class GameMap
 				{
 					sum += i;
 					num++;
-					LOGGER.debug ("unvisited: ", i);
 				}
 			
 			sum = sum / num;
-			LOGGER.debug ("weight point: ", sum);
 			while (sum < 1 || visited[sum] || !vc.nodes.contains (sum))
 			{
 				sum++;
@@ -754,7 +689,6 @@ public class GameMap
 			}
 			
 			// sum is our waypoint
-			LOGGER.debug ("found waypoint: ", sum);
 			
 			List<Integer> walkPath2 = new ArrayList<Integer> ();
 			visited = new boolean[flood.length];
@@ -771,26 +705,15 @@ public class GameMap
 				compartments[i] = tmp[i];
 			for (int i : walkPath2)
 				if (i != sum) compartments[i] = Integer.MAX_VALUE;
-			Utils.printMap(compartments, width);
+			//Utils.printMap(compartments, width);
 			
 			// shortest path sum-end
 			int[] flood2 = floodFill (sum, null, -1);
 			compartments = tmp;
 			
-			
-			LOGGER.debug ("first part of shortest path: ", walkPath2);
-			if (LOGGER.isDebugEnabled ())
-			{
-				Utils.printMap(flood2, width);
-				Utils.printMap(compartments, width);
-			}
 			visited[sum] = false;
-			//if (walkPath2 != null)
-				//System.exit(1);
-			//int[] flood2 = floodFill (sum, Utils.getDirection (walkPath2.get (walkPath2.size () - 2), walkPath2.get (walkPath2.size () - 1)));
 			walkPath2.addAll (shortestPath (flood2, visited, sum, end));
 
-			LOGGER.debug ("new shortest path: ", walkPath2);
 			
 			extendPath (walkPath2, visited, vc, dir);
 			if (walkPath.size () < walkPath2.size ())
@@ -811,23 +734,20 @@ public class GameMap
 		// walkPath.add(end);
 		int cur = end;
 		visited[end] = true;
+		int it = 0;
 		while (cur != start)
 		{
+			if (it++ > 1000)
+				break;
 			List<Integer> neighbors = getAdjacentAvailable (cur);
 			for (int i : neighbors)
 			{
-				LOGGER.debug ("looking from ", cur, " at neighbor: ", i, " to find start ", start, " having ", floodFromStart[start]);
 				if (!visited[i] && floodFromStart[i] < floodFromStart[cur])
 				{
-					LOGGER.debug ("neighbor ", i, " accepted");
 					cur = i;
 					visited[i] = true;
 					walkPath.add (insertAt, i);
 					break;
-				}
-				else
-				{
-					LOGGER.debug (i, " -> ", visited[i], " == ", floodFromStart[i], " -- ", floodFromStart[cur]);
 				}
 			}
 		}
@@ -907,8 +827,6 @@ public class GameMap
 				}
 				if (!didnow)
 					c++;
-				
-				LOGGER.debug("walkpath during extending: ", walkPath);
 			}
 		}
 		
@@ -951,9 +869,6 @@ public class GameMap
 			&& p2ext < visited.length && !visited[p1ext] && !visited[p2ext]
 			&& map[p1ext] == 0 && map[p2ext] == 0)
 		{
-			if (LOGGER.isDebugEnabled ())
-				LOGGER.debug ("extending: ", p1, "/", p2, " -> ", p1, "-", p1ext, "-",
-					p2ext, "-", p2);
 			walkPath.add (c + 1, p1ext);
 			walkPath.add (c + 2, p2ext);
 			visited[p1ext] = true;
@@ -1020,15 +935,8 @@ public class GameMap
 		List<Integer> all = getAdjacentAvailable (idx);
 		List<Integer> allowed = new ArrayList<Integer> ();
 		for (int i : all)
-		{
 			if (Utils.allowedMove (Utils.getDirection (idx, i), dir))
-			{
-				LOGGER.debug (i, " is allowed adj");
 				allowed.add (i);
-			}
-			else
-				LOGGER.debug (i, " is forbidden adj: stand ", idx, " stand dir ", dir, " to ", i);
-		}
 		return allowed;
 	}
 	
@@ -1043,23 +951,14 @@ public class GameMap
 			adj.add (idx - 1);
 		// top
 		if (idx >= width && (map[idx - width] == 0 || idx - width == myPos) && ((comp == Integer.MAX_VALUE) || compartments[idx - width] == comp))
-		{
-			//LOGGER.debug ("adding ", idx - width, " as ", comp, "---", map[idx - width], "---", compartments[idx - width]);
 			adj.add (idx - width);
-		}
-		//else if (idx >= width)
-			//LOGGER.debug ("not adding ", idx - width, " as ", comp, "---", map[idx - width], "---", compartments[idx - width]);
 		// right
 		if ( (idx + 1) % width != 0 && (map[idx + 1]  == 0 || idx + 1 == myPos) && ((comp == Integer.MAX_VALUE) || compartments[idx + 1] == comp))
 			adj.add (idx + 1);
 		// bottom
 		if (idx + width < compartments.length && (map[idx + width] == 0 || idx + width == myPos) && ((comp == Integer.MAX_VALUE) || compartments[idx + width] == comp))
-		{
-			//LOGGER.debug ("adding ", idx + width, " as ", comp, "---", map[idx + width], "---", compartments[idx + width]);
 			adj.add (idx + width);
-		}
 
-		LOGGER.debug ("adjacents of ", idx, " (comp: " + comp + ")", " are ", adj);
 		return adj;
 	}
 	
@@ -1145,11 +1044,9 @@ public class GameMap
 	{
 		return map;
 	}
-
+/*
 	public void debugPos()
 	{
-		if (!LOGGER.isDebugEnabled ())
-			return;
 		StringBuffer sb = new StringBuffer ();
 		sb.append ("\t");
 		for (int i = 0; i < width; i++)
@@ -1161,8 +1058,7 @@ public class GameMap
 			if ( (i + 1) % width == 0)
 				sb.append ("\n#").append ((i+1) / width).append ("#\t");
 		}
-		LOGGER.debug ("\n" + sb.toString ());
 		
-	}
+	}*/
 	
 }
