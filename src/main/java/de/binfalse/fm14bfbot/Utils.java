@@ -244,5 +244,11 @@ public class Utils
 		return dX + dY;
 		
 	}
+
+
+	public static boolean neighbors (int start, int end, int width)
+	{
+		return (start == end + 1 && start % width != 0) || (start == end - 1 && end % width != 0) || start == end - width || start == end + width;
+	}
 	
 }

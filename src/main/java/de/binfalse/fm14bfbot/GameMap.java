@@ -658,12 +658,13 @@ public class GameMap
 	public List<Integer> findGoodPath (int[] flood, VirtualCompartment vc, int end, int dir)
 	{
 		int start = vc.input;
+		
 		if (end < 0)
 		{
 			// we need to decide where to go to!? maybe just search for the field with
 			// the biggest flood value!?
 			// throw new RuntimeException("not yet implemented");
-			int highest = 0;
+			int highest = -1;
 			for (int i : vc.nodes)
 				if (flood[i] > highest)
 				{
@@ -674,7 +675,15 @@ public class GameMap
 		List<Integer> walkPath = new ArrayList<Integer> ();
 		boolean[] visited = new boolean[flood.length];
 		//Utils.printMap(flood, width);
-		walkPath.addAll (shortestPath (flood, visited, start, end));
+		
+		// is start adj to end?
+		if (Utils.neighbors (start, end, width))
+		{
+			walkPath.add (start);
+			walkPath.add (end);
+		}
+		else
+			walkPath.addAll (shortestPath (flood, visited, start, end));
 		
 		extendPath (walkPath, visited, vc, dir);
 		
