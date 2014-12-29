@@ -752,6 +752,9 @@ public class GameMap
 	{
 		List<Integer> walkPath = new ArrayList<Integer> ();
 		
+		if (end < 0)
+			return walkPath;
+		
 		walkPath.add (end);
 		int insertAt = walkPath.size () - 1;
 		// walkPath.add(end);
