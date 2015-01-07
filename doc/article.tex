@@ -1,0 +1,74 @@
+\documentclass[a4paper,10pt]{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,trees,decorations.pathmorphing,backgrounds,fit,shapes,arrows,chains, decorations.markings,shapes.arrows}
+\usepackage{verbatim}
+\usepackage{lmodern}
+%\usepackage[active,tightpage]{preview}
+\usepackage{amssymb}
+\usepackage{subfigure}
+%\PreviewEnvironment{tikzpicture}
+%\setlength\PreviewBorder{5mm}%
+\usepackage{cite}
+\nonfrenchspacing
+\usepackage[expansion=true,protrusion=true]{microtype}
+%\usepackage[margin=0.2in]{geometry}
+\usepackage[labelfont=bf,labelsep=period,justification=raggedright]{caption}
+
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\renewcommand*{\familydefault}{\sfdefault}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage{multicol}
+\usepackage{listings}
+
+
+\definecolor{blau}{cmyk}{1,0.55,0,0.44}
+\definecolor{rot}{HTML}{BF0303}
+\definecolor{lgray}{rgb}{.8,.8,.8}
+
+%opening
+\title{binfalse' TronBot}
+\author{Martin Scharm, Tom Theile, Markus Wolfien, Martin Peters}
+
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{
+    bookmarks=true,         % show bookmarks bar?
+    unicode=false,          % non-Latin characters in Acrobat’s bookmarks
+    pdftoolbar=true,        % show Acrobat’s toolbar?
+    pdfmenubar=true,        % show Acrobat’s menu?
+    pdffitwindow=false,     % window fit to page when opened
+    pdfstartview={FitH},    % fits the width of the page to the window
+    pdftitle={binfalse' TronBot},    % title
+    pdfauthor={martin scharm},     % author
+    pdfsubject={binfalse' TronBot},   % subject of the document
+    pdfcreator={me},   % creator of the document
+    pdfproducer={some tool}, % producer of the document
+    pdfkeywords={freies magazin} {programming contest} {light cycle},
+    pdfnewwindow=true,      % links in new window
+    colorlinks=true,       % false: boxed links; true: colored links
+    linkcolor=blau,          % color of internal links (change box color with linkbordercolor)
+    citecolor=blau,        % color of links to bibliography
+    filecolor=magenta,      % color of file links
+    urlcolor=blau           % color of external links
+}
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\begin{center}
+\begin{tabular}{ll}
+sources & \includegraphics[height=1em]{GitHub-Mark-120px-plus.png} \href{https://github.com/binfalse/LightCycleBot}{binfalse/LightCycleBot}\\
+license & GPLv3\\
+\end{tabular}
+\end{center}
+
+\end{abstract}
+
+\include{content}
+\end{document}

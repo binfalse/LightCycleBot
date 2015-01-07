@@ -1,0 +1,510 @@
+
+
+
+\section{"Ubersicht}
+wir haben am programmierwettbewerb teilgenommen.
+aufgabe war es ...
+wir haben erst am 15. dezember angefangen uns dem problem zu widmen.
+
+
+Um dem bot ein gutes verständnis für das Spielfeld zu geben haben wir zunächst verschiedene graphentheoretische Algorithmen.
+Mittels \textit{floodfill} Methoden können wir schnell den kürzesten Pfad zu einem jeweiligen Zielfeld finden und herausfinden welche Felder überhaupt erreichbar sind.
+Außerdem wird das Spielfeld zunächst in Compartments aufgeteilt.
+Compartments sind Räume, in denen jedes Feld von jedem anderen erreicht werden kann.
+Den Compartments werden dabei nummern zugewiesen.
+es ist also jederzeit möglich für eine gegebene Position die zugehörige Raumnummer zu erfahren und festzustellen, ob sich zwei Bots in dem gleichen Raum befinden.
+
+Wir haben dann schnell festgestellt, dass beim Spielgeschehen zwei modi unterschieden werden können:
+(i) fight mode - es befindet sich mindestens ein gegnerischer bot in unserem Compartment;
+(ii) survival mode - wir sind allein und müssen den verf"egbaren platz im Compartment effektiv nutzen um möglichst lange zu überleben.
+In jeder Runde bestimmen wir also, ob sich ein Gegner in unserem Compartment befindet und gehen dann entweder in den Survival Mode oder in den Fight Mode um unser Vorgehen für die nächste(n) Runde(n) zu berechnen.
+
+\section{Survival Mode}
+An der "Uberlebensstrategie haben wir viel herumhantiert.
+Die Aufgabe besteht darin, möglichst viele Felder in unserem Compartment abzulaufen und den unausweichlichen Crash möglichst lange herauszuzögern.
+
+\subsection{Welche Lösungen sieht das Hirn?}
+Intuitiv sahen wir (als Menschen) regelmäßig drei Möglichkeiten den platz zu füllen:
+\begin{itemize}
+ \item wall hugging: der bot läuft zur nächsten wand und versucht dann immer an der wand entlang zu laufen, siehe Abbildung \ref{fig:intuitiv:wallhugging}
+ \item snailing: der bot versuch schneckenförmig den platz zu füllen, siehe Abbildung \ref{fig:intuitiv:snailing}
+ \item stacking: der bot produziert durch hin- und herlaufen ein stapelähnliches Muster, siehe Abbildung \ref{fig:intuitiv:stacking}
+\end{itemize}
+
+
+\begin{figure}[ht]
+\centering
+%
+\subfigure[Wall Hugging]{
+\scalebox{0.3}{
+\begin{tikzpicture}[>=stealth',]
+\foreach \x in {0,...,6}
+    \foreach \y in {0,...,6} 
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,\y) {};
+
+\draw[->,blau,line width=.3cm] (0,0) -- (6,0) -- (6,6) -- (0,6) -- (0,1) -- (5,1) -- (5,5) -- (1,5) -- (1,3);
+\end{tikzpicture}
+}
+\label{fig:intuitiv:wallhugging}}
+%
+\subfigure[Snailing]{
+\scalebox{0.3}{
+\begin{tikzpicture}[>=stealth',]
+\foreach \x in {0,...,6}
+    \foreach \y in {0,...,6} 
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,\y) {};
+
+\draw[->,blau,line width=.3cm] (3,3) -- (3,4) -- (2,4) -- (2,2) -- (4,2) -- (4,5) -- (1,5) -- (1,3);
+\end{tikzpicture}
+}
+\label{fig:intuitiv:snailing}}
+%
+\subfigure[Stacking]{
+\scalebox{0.3}{
+\begin{tikzpicture}[>=stealth',]
+\foreach \x in {0,...,6}
+    \foreach \y in {0,...,6} 
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,\y) {};
+
+\draw[->,blau,line width=.3cm] (0,0) -- (6,0) -- (6,1) -- (0,1) -- (0,2) -- (6,2) -- (6,3) -- (2,3);
+\end{tikzpicture}
+}
+\label{fig:intuitiv:stacking}}
+%
+\caption{\textbf{Intuitive Ansätze.}}
+\label{fig:intuitivsurvival}
+\end{figure}
+
+
+Abhängig von der aktuellen Situation sind die Ansätze natürlich unterschiedlich gut geeignet und zeigen relative schnell ihre schwächen.
+Da wir auch keine guten Kriterien finden konnten, die uns helfen einen der Ansätze auszuwählen, suchten wir weiter nach Möglichkeiten den Platz optimal zu füllen.
+
+
+
+\subsection{Puzzlen?}
+Eine, wie wir finden, ziemlich interessante Idee war, daraus ein Puzzle Problem zu machen.
+Das heißt, kleine Puzzleteile mit Ein- und Ausgängen zu definieren (wie in Abbildung \ref{fig:puzzle} angedeutet)
+und dann einen Weg zu finden, diese Teile durch rotationen und translationen so aneinander zu legen, dass das Spielfeld bestenfalls vollständig von Puzzleteilen bedeckt wird.
+
+
+\begin{figure}[ht]
+\centering
+%
+\subfigure[Piece 1]{
+\scalebox{0.5}{
+\begin{tikzpicture}[>=stealth',]
+\foreach \x in {0,...,3}
+    \foreach \y in {0,...,3} 
+      \node [rectangle,ultra thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,\y) {};
+
+\draw[blau,line width=.3cm] (0,-1) -- (0,3) -- (1,3) -- (1,0) -- (2,0) -- (2,3) -- (3,3) -- (3,-1);
+\end{tikzpicture}
+}
+\label{fig:puzzle:41}}
+%
+\subfigure[Piece 2]{
+\scalebox{0.5}{
+\begin{tikzpicture}[>=stealth',]
+\foreach \x in {0,...,3}
+    \foreach \y in {0,...,3} 
+      \node [rectangle,ultra thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,\y) {};
+
+\draw[blau,line width=.3cm] (0,-1) -- (0,3) -- (1,3) -- (1,0) -- (3,0) -- (3,1) -- (2,1) -- (2,2) -- (3,2) -- (3,3) -- (2,3) -- (2,4);
+\end{tikzpicture}
+}
+\label{fig:puzzle:41}}
+%
+\subfigure[Piece 3]{
+\scalebox{0.5}{
+\begin{tikzpicture}[>=stealth',]
+\foreach \x in {0,...,2}
+    \foreach \y in {0,...,2} 
+      \node [rectangle,ultra thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,\y) {};
+
+\draw[blau,line width=.3cm] (0,-1) -- (0,2) -- (2,2) -- (2,1) -- (1,1) -- (1,0) -- (3,0);
+\end{tikzpicture}
+}
+\label{fig:puzzle:41}}
+%
+\subfigure[Piece 4]{
+\scalebox{0.5}{
+\begin{tikzpicture}[>=stealth',]
+\foreach \x in {0,...,2}
+    \foreach \y in {0,...,2} 
+      \node [rectangle,ultra thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,\y) {};
+
+\draw[blau,line width=.3cm] (0,-1) -- (0,2) -- (1,2) -- (1,0) -- (2,0) -- (2,3);
+\end{tikzpicture}
+}
+\label{fig:puzzle:41}}
+%
+\subfigure[Piece 5]{
+\scalebox{0.5}{
+\begin{tikzpicture}[>=stealth',]
+\foreach \x in {0,...,1}
+    \foreach \y in {0,...,1} 
+      \node [rectangle,ultra thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,\y) {};
+
+\draw[blau,line width=.3cm] (0,-1) -- (0,1) -- (1,1) -- (1,-1);
+\end{tikzpicture}
+}
+\label{fig:puzzle:41}}
+%
+\subfigure[Piece 6]{
+\scalebox{0.5}{
+\begin{tikzpicture}[>=stealth',]
+\foreach \x in {0,...,1}
+    \foreach \y in {0,...,1} 
+      \node [rectangle,ultra thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,\y) {};
+
+\draw[blau,line width=.3cm] (0,-1) -- (0,2);
+\draw[blau,line width=.3cm] (2,1) -- (1,1) -- (1,0) -- (2,0);
+\end{tikzpicture}
+}
+\label{fig:puzzle:41}}
+%
+\caption{\textbf{Beispiele von Puzzleteilen.}}
+\label{fig:puzzle}
+\end{figure}
+
+Aus Zeitgründen haben wir die Idee leider schnell wieder verworfen.
+Glücklicherweise dann aber eine sehr elegante Alternative gefunden.
+
+
+\subsection{Umwege laufen!}
+Der eingereichte Ansatz besteht darin, einen beliebigen (siehe unten) Weg zu finden und diesen durch Umwege zu erweitern.
+Wir müssen also die beiden folgenden Aufgaben erledigen:
+
+\subsubsection{Finde einen Weg.}
+Das Finde-irgendeinen-Weg-Problem klingt zunächst trivial, wir könnten zum Beispiel einfach den kürzesten Weg zu dem entferntesten Feld wählen:
+Einfach zu finden und sofort schon ziemlich lang.
+Dieser Ansatz verbaut uns aber oft viele Möglichkeiten.
+Siehe zum Beispiel Abbildung \ref{fig:longestPath}.
+Der längste Pfad vom grau markierten Startpunkt ist 8 Felder lang (Abbildung \ref{fig:longestPath:shortest}).
+Sobald wir uns aber an der Kreuzung (1) für den unteren Weg entscheiden haben wir keine Chance die Felder im virtuellen Raum über uns zu füllen.
+Auch wenn dieser Raum viel mehr Felder beinhaltet und wir, mit optimaler Füllstrategie, sogar mehr als doppelt so lange überleben könnten (Abbildung \ref{fig:longestPath:optimal}).
+
+
+
+
+\begin{figure}[ht]
+\centering
+%
+\subfigure[bester Pfad zum entferntesten Feld]{
+\scalebox{0.5}{
+\begin{tikzpicture}[>=stealth',]
+%
+\node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=lgray] (rec) at (0,0) {0};
+\node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (1,0) {1};
+
+% bottom
+    \foreach \x in {2,...,8} 
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x-1,-1) {\x};
+
+% top
+\node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (1,1) {};
+\foreach \x in {-1,...,3}
+    \foreach \y in {2,...,4} 
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,\y) {};
+
+%\draw[->,blau,line width=.3cm] (0,0) -- (6,0) -- (6,6) -- (0,6) -- (0,1) -- (5,1) -- (5,5) -- (1,5) -- (1,3);
+\end{tikzpicture}
+}
+\label{fig:longestPath:shortest}
+}
+%
+\subfigure[optimaler Pfad]{
+\scalebox{0.5}{
+\begin{tikzpicture}[>=stealth',]
+%
+\node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=lgray] (rec) at (0,0) {0};
+\node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (1,0) {1};
+
+% bottom
+    \foreach \x in {2,...,8} 
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x-1,-1) {};
+
+% top
+\node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (1,1) {2};
+\foreach \x in {-1,...,3}
+    \foreach \y in {2,...,4} 
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,\y) {};
+      
+\node (rec) at (1,2) {3};
+\node (rec) at (1,3) {4};
+\node (rec) at (2,3) {5};
+\node (rec) at (2,2) {6};
+\node (rec) at (3,2) {7};
+\node (rec) at (3,3) {8};
+    \foreach \x in {9,...,13} 
+      \node (rec) at (12-\x,4) {\x};
+
+\node (rec) at (-1,3) {14};
+\node (rec) at (0,3) {15};
+\node (rec) at (0,2) {16};
+\node (rec) at (-1,2) {17};
+
+
+%\draw[->,blau,line width=.3cm] (0,0) -- (6,0) -- (6,6) -- (0,6) -- (0,1) -- (5,1) -- (5,5) -- (1,5) -- (1,3);
+\end{tikzpicture}
+}
+\label{fig:longestPath:optimal}
+}
+%
+\caption{\textbf{Der Weg zum entferntesten Feld muss nicht der beste sein.}}
+\label{fig:longestPath}
+\end{figure}
+
+
+Es also wichtig, sich keine Wege zu verbauen.
+Daher kann unser Bot sogenannte Gelenkpunkte (engl. articulation points) finden, die den Raum teilen, wenn man sie betritt.
+Die mit einer 1 beschrifteten Felder in Abbildung \ref{fig:longestPath} sind ein Beispiel: Sobald wir dieses Feld betreten gibt es zwei getrennte Räume (oben: 16 Felder; unten: 7 Felder).
+Wenn wir diese Gelenkpunkte kennen, können wir unseren aktuellen Raum in virtuelle Räume aufteilen.
+Die Gelenkpunkte bilden dabei die Ein- und Ausgänge der Räume.
+Das bringt uns zu einem weiteren Problem: Was ist der beste Weg durch die Räume?
+Da die Zahl der virtuellen Räume in der Regel recht klein ist, ist die Lösung denkbar einfach.
+Wir können per Tiefensuche alle Raumabfolgen finden und erhalten einen Baum, dessen Blätter wir mit der Summer der Felder in den besuchten Räumen annotieren.
+Das Blatt mit der höchsten Zahl gibt uns den besten Weg durch die Räume.
+(Auch hier kann es Artefakte geben, die dazu führen, dass ein anderer Pfad geeigneter ist, aber im allgemeinen sollte der Algorithmus immer einen ziemlich guten Pfad finden.)
+
+Haben wir einen Pfad durch die Räume gefunden, können wir für jeden Raum einen Weg suchen.
+Im ersten Raum startet der Pfad natürlich an unserer aktuellen Position.
+Das Ziel in einem Raum ist jeweils der Gelenkpunkt, der uns in den nächsten Raum führt.
+Im letzten Raum definieren wir das entfernteste Feld als Ziel.
+Unseren optimalen ``beliebigen'' Pfad erhalten wir, indem wir die kürzesten Pfade zwischen den Start- und Ziel-Feldern aneinander reihen.
+
+
+\subsubsection{Finde Umwege.}
+\label{sec:umwege}
+Haben wir einen Pfad gefunden, versuchen wir diesen durch Umwege zu erweitern.
+Das heißt, wir gucken uns iterativ immer zwei benachbarte Punkte $p_1$ und $p_2$ mit den Koordinaten $(x(p_1), y(p_1))$ bzw. $(x(p_2), y(p_2))$ im aktuellen Pfad an und behandeln sie wie folgt:
+
+\begin{itemize}
+ \item $x(p_1) = x(p_2)$: $p_1$ und $p_2$ sind übereinander. Wir versuchen einen Umweg über die Felder  $p_1'=(x(p_1) + 1, y(p_1))$ und $p_2'=(x(p_2) + 1, y(p_2))$ bzw. über die Felder $p_1''=(x(p_1) - 1, y(p_1))$ und $p_2''=(x(p_2) - 1, y(p_2))$ zu laufen.
+ \item $y(p_1) = y(p_2)$: $p_1$ und $p_2$ sind nebeneinander. Wir versuchen einen Umweg über die Felder  $p_1'=(x(p_1), y(p_1) + 1)$ und $p_2'=(x(p_2), y(p_2) + 1)$ bzw. über die Felder $p_1''=(x(p_1), y(p_1) - 1)$ und $p_2''=(x(p_2), y(p_2) - 1)$ zu laufen.
+\end{itemize}
+
+Sind $p_1'$ und $p_2'$ noch frei, so intergrieren wir sie in den aktuellen Pfad, anderenfalls versuchen wir $p_1''$ und $p_2''$ zu integrieren.
+Wie sich diese Erweiterungsregeln auswirken verdeutlicht Abbildung \ref{fig:extending}.
+Durch diese einfachen Regeln läßt sich in den meisten Fällen ein wirklich gutes Ergebnis erzielen.
+
+
+
+\begin{figure}[ht]
+\centering
+%
+\scalebox{0.8}{
+\begin{tikzpicture}[>=stealth',]
+\foreach \x in {0,...,3}
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,0) {};
+\foreach \x in {0,...,3}
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (1,\x) {};
+\foreach \x in {0,...,3}
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (2,\x) {};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (3,3) {};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (3,2) {};
+
+
+\definecolor{cur}{rgb}{.8,.8,.8}
+\draw[cur,line width=.3cm] (2,3) -- (3,3) -- (3,2) -- (2,2);
+
+\definecolor{cur}{rgb}{.6,.6,.6}
+\draw[cur,line width=.3cm] (1,2) -- (1,3) -- (2,3) -- (2,2);
+
+\definecolor{cur}{rgb}{.4,.4,.4}
+\draw[cur,line width=.3cm] (1,1) -- (1,2) -- (2,2) -- (2,1);
+
+\definecolor{cur}{rgb}{.2,.2,.2}
+\draw[cur,line width=.3cm] (1,0) -- (1,1) -- (2,1) -- (2,0);
+
+\draw[->,line width=.3cm] (-1,0) -- (4,0);
+
+\draw[->,red,line width=.05cm] (-1,0) -- (1,0) -- (1,1) -- (1,2) -- (1,3) -- (2,3) -- (3,3) -- (3,2) -- (2,2) -- (2,1) -- (2,0) -- (3.8,0);
+
+\end{tikzpicture}
+}
+%
+\caption{\textbf{Umwege finden.} In schwarz ist ein initialer kurzer Pfad gegeben, für den iterativ Umwege gefunden werden sollen. Die gefundenen Umwege sind durch Graustufen hervorgehoben. Der finale Pfad durch diesen Mapteil ist in rot gekennzeichnet.}
+\label{fig:extending}
+\end{figure}
+
+
+
+\subsubsection{Finde groessere Umwege.}
+
+Leider stießen wir relativ oft auf Situationen in denen der Umwegealgorithmus nicht sehr gut aussah.
+Ein Beispiel ist in Abbildung \ref{fig:extending2} zu sehen: Der entwickelte Algorithmus ist nicht in der Lage den initialen Pfad zu erweitern und die freien Felder zu nutzen.
+
+
+\begin{figure}[ht]
+\centering
+%
+\scalebox{0.8}{
+\begin{tikzpicture}[>=stealth',]
+
+\foreach \x in {-1,...,4}
+    \foreach \y in {0,...,4} 
+      \node [rectangle,ultra thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,\y) {};
+      
+    \foreach \y in {0,...,3} 
+      \node [rectangle,ultra thick,draw,fill=black,minimum width=1cm,minimum height=1cm] (rec) at (-1,\y) {};
+    \foreach \y in {0,...,3} 
+      \node [rectangle,ultra thick,draw,fill=black,minimum width=1cm,minimum height=1cm] (rec) at (4,\y) {};
+    \foreach \y in {-1,...,4} 
+      \node [rectangle,ultra thick,draw,fill=black,minimum width=1cm,minimum height=1cm] (rec) at (\y,-1) {};
+      
+      \node [rectangle,ultra thick,draw,fill=black,minimum width=1cm,minimum height=1cm] (rec) at (1,3) {};
+      \node [rectangle,ultra thick,draw,fill=black,minimum width=1cm,minimum height=1cm] (rec) at (2,3) {};
+      
+      %waypoint
+      \node [rectangle,ultra thick,draw,fill=black,minimum width=1cm,minimum height=1cm,fill=lgray] (rec) at (2,2) {};
+      
+\draw[->,line width=.3cm] (-1,4) -- (5,4);
+      \draw[->,line width=.05cm,red] (-1,4) -- (0,4) -- (0,2) -- (3,2) -- (3,4) -- (4.8,4);
+\end{tikzpicture}
+}
+%
+\caption{\textbf{Größere Umwege gesucht} Der schwarze Pfeil kennzeichnet den intial gefundenen Pfad. Schwarz gefüllte Felder sind Wände und können nicht betreten werden. Unser Algorithmus, wie in \ref{sec:umwege} beschrieben, kann den Pfad nicht erweitern und wir verlieren die 14 weissen Felder.}
+\label{fig:extending2}
+\end{figure}
+
+
+Abhilfe bietet hier ein kleiner Trick:
+Wenn der Bot einen Weg wählt, der weniger als 80\% der verfügbaren Felder abdeckt, fügen wir einen Wegpunkt ein, den der Bot zusätzlich passieren soll.
+Dass heißt, er muss jetzt nicht mehr nur einfach von Start- zu Ziel-Feld im aktuellen Raum laufen, sondern einen Zwischenstopp an dem neuen Wegpunkt machen.
+Der oben beschriebene Algorithmus wird dann für beide Teilstrecken nacheinander ausgeführt.
+Als Wegpunkt dient dabei ein vorher nicht erreichtes Feld, und wir suchen eines, das möglichst nahe dem Schwerpunkt der nicht erreichten Felder liegt.
+Im Beispiel aus Abb. \ref{fig:extending2} würden wir die Mitte des freien Raumes zum Wegpunkt erklären.
+Damit passiert der Bot auf jeden Fall den Raum und die in \ref{sec:umwege} beschriebene Vorgehensweise kann den neuen Pfad verlängern.
+
+Diese Strategie stellte sich in unseren Tests als erfreulich effektiv heraus.
+In den allermeisten Fällen ist der Bot in der Lage eine optimale Füllstrategie zu berechnen.
+Ein Video vom Füllen ist auf Youtube finden: \href{https://www.youtube.com/watch?v=SsyaQd-YFz8}{YouTube:SsyaQd-YFz8} (die GUI wurde von freiesMagazin zur Verfügung gestellt).
+
+
+
+
+
+
+
+
+
+\section{Fight Mode}
+Uns blieb leider nicht mehr viel Zeit um über Strategien für den Kampf nachzudenken.
+Aus der Bildverarbeitung kannten wir noch die Voronoi Tesselierung, die Aufschluss darüber gibt, welcher Bot ein gegebenes Feld am schnellsten erreichen kann.
+Dazu wird für jeden Bot mittels Dijkstra die Entfernung eines jeden Feldes bestimmt und der Bot, der ein Feld am schnellsten erreichen kann, gewinnt dieses.
+Ein Beispiel einer Voronoi Tesselierung ist in Abbildung \ref{fig:voronoi} zu sehen.
+
+
+\begin{figure}[ht]
+\centering
+%
+\scalebox{0.8}{
+\begin{tikzpicture}[>=stealth',]
+\foreach \x in {0,...,5}
+\foreach \y in {0,...,5}
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (\x,\y) {};
+      
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=black] (rec) at (5,3) {};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=black] (rec) at (4,3) {};
+      
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=black] (rec) at (1,2) {};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=black] (rec) at (1,1) {};
+      
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot] (rec) at (1,4) {\color{white}\textbf{\LARGE A}};
+      
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=blau] (rec) at (4,1) {\color{white}\textbf{\LARGE B}};
+      
+      
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=blau!10!white] (rec) at (5,1) {\color{blau}1};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=blau!10!white] (rec) at (3,1) {\color{blau}1};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=blau!10!white] (rec) at (4,2) {\color{blau}1};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=blau!10!white] (rec) at (4,0) {\color{blau}1};
+      
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=blau!10!white] (rec) at (3,0) {\color{blau}2};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=blau!10!white] (rec) at (5,0) {\color{blau}2};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=blau!10!white] (rec) at (3,2) {\color{blau}2};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=blau!10!white] (rec) at (5,2) {\color{blau}2};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=blau!10!white] (rec) at (2,1) {\color{blau}2};
+      
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=blau!10!white] (rec) at (2,0) {\color{blau}3};
+      
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=blau!10!white] (rec) at (1,0) {\color{blau}4};
+      
+      
+      
+      
+      
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (2,4) {\color{rot}1};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (0,4) {\color{rot}1};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (1,5) {\color{rot}1};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (1,3) {\color{rot}1};
+
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (0,3) {\color{rot}2};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (2,3) {\color{rot}2};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (0,5) {\color{rot}2};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (2,5) {\color{rot}2};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (3,4) {\color{rot}2};
+      
+      
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (4,4) {\color{rot}3};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (3,5) {\color{rot}3};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (0,2) {\color{rot}3};
+      
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (5,4) {\color{rot}4};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (4,5) {\color{rot}4};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (0,1) {\color{rot}4};
+      
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm,fill=rot!10!white] (rec) at (5,5) {\color{rot}5};
+      
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (0,0) {5};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (2,2) {3};
+      \node [rectangle,thick,draw,minimum width=1cm,minimum height=1cm] (rec) at (3,3) {3};
+      
+\end{tikzpicture}
+}
+%
+\caption{\textbf{Voronoi Tesselierung.} Farbig markierte Felder zeigen welcher Spieler dieses Feld schneller erreichen kann. Schwarze Felder zeigen Wände und weiße Felder können von beiden Spielern in der gleichen Zeit erreicht werden. Die Zahlen in den Feldern geben die Anzahl der nötigen Züge an. Spieler A (rot) ist klar im Vorteil, er könnte 17 Felder für sich behaupten. Spieler B (blau) ist nur in 12 Fällen schneller.}
+\label{fig:voronoi}
+\end{figure}
+
+
+Unsere Kampfstrategie beruht nun darauf, auf ein Feld zu rücken, bei dem die Voronoi Tesselierung für uns am günstigsten ausfällt.
+Dazu berechnen wir für jeden Bot und für alle möglichen nächsten Schritte wie viele Felder wir gewinnen können.
+Aus diesen Möglichkeiten wählen wir die aussichtsreichste.
+Im Beispiel aus Abbildung \ref{fig:voronoi} würden wir als Spieler A in Richtung Süden und als Spieler B in Richtung Westen gehen.
+Sind wir den Schritt gegangen, warten wir dort auf die nächste Runde.
+
+Diese Strategie ist offen gesagt nicht sehr durchdacht.
+Sie lässt unseren Bot aber potentiell eher in Richtung der Gegner wandern, um ihnen den Weg abzuschneiden, und verhindert einen übermässigen Raumverlust.
+Es wäre wahrscheinlich sinnvoller mehr als einen Schritt in die Zukunft zu rechnen (Rechenzeit wäre kein großes Problem), oder eine alternative Taktik zu suchen, jedoch rückte der Tag der Abgabe immer näher und wir entschieden uns den Bot einfach in dieser Version abzugeben.
+Wir schickten also \href{https://github.com/binfalse/LightCycleBot/tree/01575db895e9e18888789b397fd9277fd087fa59}{Commit 01575db} als die bis dato finale Version ein.
+
+
+\newpage
+
+\section{Outcome}
+Wie sich herausstellte, hatte der eingesendete Bot noch einen Fehler und stürzte in einigen Fällen mit folgendem Fehler ab:
+
+\lstset{language=Java,basicstyle=\scriptsize\ttfamily}
+\begin{lstlisting}
+Exception in thread "main" java.lang.ArrayIndexOutOfBoundsException: -1
+	at de.binfalse.fm14bfbot.GameMap.shortestPath(GameMap.java:750)
+	at de.binfalse.fm14bfbot.GameMap.findGoodPath(GameMap.java:677)
+	at de.binfalse.fm14bfbot.GameMap.optimalFill(GameMap.java:637)
+	at de.binfalse.fm14bfbot.LightCycleBot.survive(LightCycleBot.java:116)
+	at de.binfalse.fm14bfbot.LightCycleBot.win(LightCycleBot.java:92)
+	at de.binfalse.fm14bfbot.LightCycleBot.main(LightCycleBot.java:205)
+\end{lstlisting}
+
+
+Freundlicher Weise wurden wir von der Redaktion darauf hingewiesen und bekamen ein paar zusätzliche Tage Zeit, um diesen Fehler zu fixen.
+Wo der Fehler passiert war ziemlich klar.
+Wie es dazu kommt jedoch nicht.
+Wegen Weihnachten und dem \href{}{31C3} mangelte es aber an Zeit und Lust und wir fixten den Fehler ziemlich hässlich: Wenn an der Stelle auf das Array an Position -1 zugegriffen werden soll, dann brich einfach ab und laufe immer gerade aus.
+In den Fällen macht der Bot also nur stupide geradeaus-Bewegungen, wir können aber mitspielen und vielleicht auf anderen Karten oder in anderen Situation zeigen was wir (nicht) können. :)
+
+Die Korrekturen geschahen in den Commits \href{https://github.com/binfalse/LightCycleBot/commit/35d1091312ccf0dea7d30db06f1c71379188cfca}{35d1091}, \href{https://github.com/binfalse/LightCycleBot/commit/504ae9b10cdd72ad7c7d914dc5f9adf3918013f8}{504ae9b} und  \href{https://github.com/binfalse/LightCycleBot/commit/7b852881d7513d430d067275532f2e89fbef1307}{7b85288}. Am Wettkampf durfte dann also \href{https://github.com/binfalse/LightCycleBot/tree/7b852881d7513d430d067275532f2e89fbef1307}{Commit 7b85288} teilnehmen.
+
+
+
